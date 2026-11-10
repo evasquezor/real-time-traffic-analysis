@@ -1,0 +1,4 @@
+regen,anzahl,mittelwert,median,anteil_ab_3min
+kein Regen,85877,2.671,1.6,0.292
+"leicht (<=0,5 mm)",1840,3.035,1.675,0.343
+mittel (<=2 mm),475,0.649,0.633,0.027

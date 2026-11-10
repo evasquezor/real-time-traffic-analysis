@@ -1,0 +1,182 @@
+stop_name,anzahl,mittelwert,median,anteil_ab_3min
+Böckingen Buchenhof,780,5.741,3.108,0.524
+"Hauptbahnhof Busbahnhof, Heilbronn",176,5.727,3.1,0.5
+Böckingen Derfflingerstraße,853,5.507,3.0,0.502
+Böckingen Schanz Nord,945,5.142,2.717,0.476
+Heilbronn Südstraße West,448,4.966,1.467,0.286
+Biberach Bonfelder Straße,77,4.95,2.817,0.481
+Frankenbach Leintalstraße,1074,4.949,2.333,0.424
+Heilbronn Albertistraße,33,4.86,4.6,0.788
+Böckingen Grünewaldschule,934,4.749,2.383,0.411
+Biberach Alter Friedhof,110,4.646,2.3,0.491
+Heilbronn Karlsruher Straße,293,4.642,3.817,0.621
+Frankenbach Maihalde B39,548,4.583,2.283,0.4
+Heilbronn Großkraftwerk Ost,83,4.513,2.4,0.41
+Kirchhausen Schlupf,511,4.504,2.033,0.397
+Frankenbach (HN) Frankenbach Rathaus,975,4.381,1.65,0.351
+Biberach Hallenbad/Friedhof,42,4.368,1.742,0.405
+Heilbronn Etzelstraße,78,4.154,2.242,0.41
+Biberach Finkenbergstraße,77,4.098,1.483,0.351
+Heilbronn Theresienwiese,312,4.058,3.15,0.516
+Böckingen Landwehrstraße West,310,3.989,3.575,0.603
+Sontheim Bahnhof Nord,414,3.945,2.858,0.486
+Heilbronn Beethovenstraße,980,3.904,2.2,0.344
+Böckingen W-Leuschner-Str Nord,718,3.898,3.233,0.543
+Sontheim Schwabenhof,1083,3.881,2.3,0.367
+Heilbronn Cäcilienstraße West,645,3.823,1.0,0.276
+Heilbronn FIAT,122,3.818,2.533,0.393
+Heilbronn Rosenberg,436,3.815,3.025,0.507
+HN Hallenbad/Bildungscampus Ost,643,3.793,3.0,0.501
+Sontheim Wertwiesen,857,3.786,2.867,0.485
+Sontheim Raidweg,45,3.744,2.933,0.489
+Heilbronn Südbahnhof West,425,3.706,2.783,0.48
+Heilbronn Besigheimer Straße,391,3.674,2.733,0.427
+Heilbronn Gildenstraße,422,3.664,2.55,0.408
+Biberach Franz-Lehar-Straße,60,3.656,1.7,0.35
+Heilbronn Industrieplatz,89,3.609,1.967,0.371
+Klingenberg Tränkgasse,423,3.606,3.033,0.508
+Sontheim Spitzwegstraße,52,3.598,3.308,0.558
+Heilbronn Kirschengarten,209,3.59,2.55,0.45
+Heilbronn Wannenäckerstraße,91,3.557,3.417,0.549
+HN Europapl./Bildungscampus West,689,3.518,2.433,0.441
+Klingenberg Schlossweg,435,3.508,2.967,0.497
+Sontheim Ackermann,340,3.497,2.325,0.424
+Böckingen Kappelfeldle,457,3.483,2.767,0.479
+Sontheim Max-Planck-Straße,410,3.466,2.933,0.495
+Heilbronn Theresienstraße,165,3.458,2.7,0.473
+Böckingen W-Leuschner-Str Süd,976,3.447,1.683,0.274
+Sontheim Güldensteinstraße,570,3.377,2.45,0.439
+Sontheim Hochschule HN Campus Sontheim,894,3.376,1.833,0.244
+Sontheim Max-von-Laue-Straße,804,3.343,1.25,0.219
+Kirchhausen Carl-Zeiss-Str.Süd,308,3.335,2.333,0.373
+Sontheim Hessenhof,1003,3.288,1.85,0.276
+Heilbronn Neckarturm,3400,3.133,2.1,0.344
+Heilbronn Hafenamt,138,3.127,2.658,0.449
+Heilbronn Zukunftspark Süd,111,3.109,2.617,0.423
+Sontheim Friedhof,335,3.109,1.75,0.334
+Heilbronn Fügerstraße,528,3.092,2.317,0.379
+Sontheim Hofgartenstraße,319,3.086,1.933,0.345
+Kirchhausen Konradsberg,312,3.086,2.025,0.343
+Sontheim Jörg-Ratgeb-Platz,872,3.08,1.317,0.179
+Heilbronn Klinikum Heilbronn,1362,3.075,2.083,0.372
+Heilbronn Wohlgelegen,642,3.071,2.4,0.372
+Böckingen Florian-Geyer-Str.,494,3.057,2.275,0.383
+Heilbronn Berliner Platz West,926,3.014,2.133,0.386
+Neckargartach Böllinger Straße,50,2.993,2.358,0.32
+Biberach Maustal,61,2.985,1.233,0.344
+Neckargartach Milchhof,54,2.963,2.083,0.389
+Böckingen Friedrichstraße West,45,2.944,3.317,0.511
+Heilbronn Hbf/Willy-Brandt-Pl. (Steig A),1045,2.903,1.167,0.229
+Neckargartach Feurerstraße,53,2.887,2.267,0.396
+Heilbronn Südstraße Ost,759,2.876,2.183,0.327
+Sontheim Staufenbergstraße,324,2.874,1.733,0.324
+Böckingen Sonnenbrunnen,40,2.801,2.183,0.4
+Böckingen Hans-Sachs-Straße,746,2.769,2.25,0.362
+Heilbronn Wilhelm-Blos-Straße,54,2.76,1.333,0.167
+Böckingen P.-Bruckmann-Brücke,654,2.751,2.183,0.321
+Böckingen Saarlandstraße,774,2.725,2.175,0.339
+Böckingen Maasstraße,673,2.709,2.1,0.296
+Kirchhausen Wimpfener Weg,566,2.663,0.967,0.325
+Heilbronn Firma Böpple,211,2.657,1.7,0.28
+Kirchhausen Schlossstraße,337,2.653,1.367,0.288
+Heilbronn Salzgrund,60,2.639,1.792,0.35
+Böckingen Mittlerer Weg,763,2.598,2.133,0.343
+Heilbronn B27 (Karl-Wüst-Br),221,2.572,1.617,0.33
+Heilbronn Stuttgarter Brücke,739,2.559,2.017,0.318
+Heilbronn Allee Post West,1805,2.476,1.133,0.255
+Neckargartach Fleischbeil West,1030,2.442,1.758,0.278
+Frankenbach (HN) Maihalde,852,2.425,0.617,0.273
+Heilbronn Rathaus,4286,2.378,1.45,0.26
+Heilbronn Brüggemannstraße,77,2.378,2.2,0.286
+Heilbronn Sülmertor,640,2.361,1.892,0.333
+Heilbronn Mühlrainstraße,529,2.358,1.267,0.31
+Heilbronn Südbahnhof Süd,2256,2.356,1.433,0.256
+Heilbronn Firma Leitz,210,2.333,1.833,0.281
+HN Harmonie/Hafenmarktpassage,1179,2.317,1.417,0.251
+Neckargartach Neckarau,60,2.309,1.383,0.267
+Böckingen Landwehrstraße Ost,463,2.307,1.933,0.279
+Neckargartach Freibad Gesundbr,1255,2.28,1.75,0.274
+Kirchhausen Schultheiß-Hammer-Str.,274,2.277,1.058,0.245
+Heilbronn Wannenäcker,198,2.244,1.808,0.303
+Heilbronn Stadtgärtnerei,94,2.233,1.217,0.33
+Böckingen Westfriedhof,129,2.195,1.0,0.31
+Heilbronn Allee Post Ost,1817,2.178,1.433,0.247
+Heilbronn Silcherplatz West,490,2.154,1.6,0.239
+Kirchhausen Schlossplatz,345,2.149,0.917,0.238
+Heilbronn Cäcilienstraße Ost,1525,2.081,1.367,0.308
+Heilbronn IHK,320,2.044,1.067,0.275
+Böckingen Jäkleinstraße West,77,2.023,0.85,0.273
+Heilbronn B27 (Kreuzenstraße),87,1.978,1.25,0.264
+Heilbronn Briefverteilzentrum,269,1.967,1.0,0.204
+Heilbronn Imlinstraße (Steig B),58,1.933,1.367,0.276
+Heilbronn Mönchseestraße,1123,1.924,1.5,0.203
+Heilbronn Löwensteiner Straße,268,1.922,1.517,0.19
+Heilbronn Berliner Platz Ost,589,1.918,0.8,0.205
+Heilbronn Karmeliterstraße,32,1.908,1.45,0.188
+Klingenberg Schlüsseläcker,112,1.898,0.058,0.214
+Böckingen Berufsschulzentr. Haselter,72,1.898,1.258,0.292
+Böckingen Kreuzgrund,536,1.879,0.958,0.179
+Neckargartach Fleischbeil Nord,291,1.871,1.4,0.22
+Böckingen Schuchmannstraße West,35,1.838,0.917,0.371
+Heilbronn Wollhausplatz,1043,1.808,0.967,0.198
+Heilbronn Badener Straße,76,1.797,1.517,0.211
+Böckingen Seestraße Ost,54,1.794,1.375,0.204
+Heilbronn Schmidbergstr West,488,1.782,1.358,0.191
+Böckingen Schanz Süd,854,1.778,0.375,0.204
+Heilbronn Schmidbergstraße Ost,190,1.743,1.725,0.253
+Horkheim Stauwehrhalle,119,1.725,0.067,0.218
+Heilbronn Riedgrund,224,1.71,1.0,0.25
+Böckingen Schollenhalde,72,1.695,1.083,0.222
+Heilbronn Kinderklinik,945,1.687,0.617,0.194
+Neckargartach Elbinger Straße,276,1.687,1.492,0.207
+Heilbronn Pestalozzistraße,367,1.677,1.75,0.084
+Böckingen LebensWerkstatt,63,1.671,1.317,0.254
+Böckingen Gasth. Sandhof,80,1.67,0.792,0.262
+Heilbronn Rampachertal,66,1.656,0.95,0.182
+Heilbronn Trappensee/Literaturhaus,136,1.625,0.0,0.14
+Kirchhausen Hausener Straße,253,1.62,0.85,0.154
+Neckargartach Sachsenäcker,252,1.604,1.425,0.155
+Heilbronn Hoover-Siedlung,1217,1.592,0.417,0.211
+Heilbronn Fichtestraße,453,1.566,1.317,0.15
+Böckingen Kraichgauplatz,590,1.565,0.808,0.134
+Heilbronn Hohenstaufenstr West,506,1.546,0.908,0.182
+Heilbronn Friedhof,305,1.513,1.333,0.111
+Heilbronn Hbf/Willy-Brandt-Pl. (Steig B),2680,1.509,1.083,0.257
+Böckingen Helmholtzstraße,65,1.506,0.783,0.246
+Heilbronn Winzerstraße,233,1.499,1.183,0.107
+Heilbronn Allee/Moltkestraße,794,1.49,0.3,0.273
+Heilbronn Hauptbahnhof/Busbahnhof,2028,1.475,0.35,0.165
+Sontheim Lutzstraße,34,1.458,0.658,0.206
+Heilbronn H.-Hoover-Straße,620,1.456,0.917,0.145
+Neckargartach Albrecht-Dürer-Schule,240,1.454,1.242,0.129
+Böckingen Kastanienweg,569,1.449,0.85,0.127
+Heilbronn Dittmarstraße,239,1.441,1.183,0.1
+"HN, Böllinger Höfe AUDI Tor B",150,1.391,0.817,0.18
+Heilbronn Waiblingerstraße,238,1.361,1.15,0.088
+Horkheim Gutedel,36,1.357,0.517,0.167
+Neckargartach Liebermannstraße,237,1.356,1.117,0.11
+Böckingen Schuchmannstraße Ost,51,1.343,0.65,0.098
+Böckingen Friedrichstraße Ost,53,1.324,0.783,0.113
+Neckargartach Falter,604,1.283,0.325,0.21
+Heilbronn Harmonie/Kunsthalle,750,1.273,0.642,0.168
+Böckingen Sperlingweg,105,1.245,1.05,0.057
+Neckargartach Brünnlesstraße,233,1.217,1.017,0.107
+Heilbronn Silcherplatz Ost,179,1.215,1.35,0.14
+Böckingen Ziegeleipark,64,1.192,0.367,0.219
+Heilbronn Käferflug,345,1.188,1.117,0.017
+Heilbronn Badener Hof,532,1.187,0.567,0.141
+Neckargartach Römerstraße,252,1.179,0.933,0.099
+Neckargartach Falterstraße,265,1.127,1.1,0.106
+Neckargartach Länderlesstraße,321,1.098,0.8,0.103
+Heilbronn Gemmingstal,183,1.095,0.75,0.071
+Heilbronn Gartenstraße,378,1.075,1.05,0.05
+Horkheim Möwenstraße,38,1.01,0.708,0.053
+Heilbronn Neckarsulmer Straße,343,0.997,0.95,0.012
+Heilbronn Wartbergsteige,388,0.907,0.9,0.015
+Heilbronn Hohenstaufenstr Ost,143,0.895,1.0,0.189
+Böckingen Bruchsaler Straße,488,0.851,0.225,0.076
+Böckingen Haselter,64,0.839,-0.417,0.203
+Böckingen Jäkleinstraße Ost,38,0.754,0.433,0.079
+Horkheim Kelter,35,0.672,0.45,0.057
+Klingenberg Siebenmorgenweg,37,0.396,0.017,0.054
+Heilbronn Schickhardtstraße,436,0.381,0.0,0.055
