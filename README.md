@@ -422,57 +422,62 @@ ausgewertet werden koennen.
 
 # KI - Erik
 
-Verspätungsprognose für den Raum Heilbronn mit Regression (scikit-learn). Der Teil
-liest die bereinigten Rows aus `traffic_data`, untersucht Muster, trainiert und
-vergleicht Modelle und stellt die Prognosen in der Datenbank für das Dashboard
-(Grafana) bereit. Alle Skripte liegen im Ordner `ml/`.
+Verspätungsprognose für den Raum Heilbronn mit Regression (scikit-learn). Der Teil liest die
+bereinigten Rows aus `traffic_data`, untersucht Muster und Abhängigkeiten, trainiert und
+vergleicht Regressionsmodelle und stellt die Prognosen in der Datenbank für das Dashboard
+(Grafana) bereit. Alle Skripte liegen im Ordner `ml/`. Stand aller Zahlen: 14.11.2026.
 
 ## 1. Überblick
 
 | Datei | Aufgabe |
 | --- | --- |
-| `ml/train.py` | Features bauen, Modelle trainieren und bewerten, bestes Modell speichern |
-| `ml/analyse.py` | Muster in den Verspätungen untersuchen (Diagramme und Tabellen) |
-| `ml/predict.py` | Prognose für eine einzelne Fahrt (Funktion `prognose()`) |
+| `ml/train.py` | Features bauen, Modelle trainieren, vergleichen und bewerten, bestes Modell speichern |
+| `ml/analyse.py` | Muster in den Verspätungen untersuchen (Tabellen und Diagramme) |
+| `ml/predict.py` | Prognose für eine einzelne Fahrt (Funktion `prognose()`, braucht `train.py` im selben Ordner) |
 | `ml/predict_batch.py` | Prognosen für alle Rows berechnen und in die Datenbank schreiben |
-| `ml/models/verspaetung_modell.joblib` | trainiertes Modell inkl. Feature-Listen, Version und Trainings-/Testtagen |
-| `ml/results/` | Ergebnisse: Metriken, Backtest, Feature-Wichtigkeit, Analyse-Diagramme |
+| `ml/models/verspaetung_modell.joblib` | trainiertes Modell inkl. Feature-Listen, Version, Trainings- und Testtagen |
+| `ml/results/` | Ergebnisse: Metriken, Backtest, Feature-Wichtigkeit, Analyse-Tabellen und -Diagramme |
 
-**Zielvariable:** `delay_seconds` aus `traffic_data`, umgerechnet in Minuten
-(Ankunftsverspätung, sonst Abfahrtsverspätung). Das ist die **Prognose des Anbieters**
-(GTFS-Realtime) und keine unabhängig gemessene Ist-Zeit. Das Modell lernt also, diese
-Anbieterwerte zu erklären und vorherzusagen.
+**Zielvariable:** `delay_seconds` aus `traffic_data`, umgerechnet in Minuten (Ankunfts-, sonst
+Abfahrtsverspätung). Das ist die **Prognose des Anbieters** (GTFS-Realtime) und keine
+unabhängig gemessene Ist-Zeit. Das Modell lernt also, diese Anbieterwerte zu erklären.
+
+**Fragestellung:** Welche Muster und Einflussfaktoren bestimmen die Verspätung, und wie genau
+lässt sie sich vor der Fahrt aus Uhrzeit, Linie, Haltestelle, Wetter und aktueller Lage im Netz
+vorhersagen? Es ist eine **Vorab-Prognose**: Die Verspätung der eigenen Fahrt an früheren
+Haltestellen wird bewusst nicht benutzt (siehe Abschnitt 7).
 
 ## 2. Ausführen
 
-Im Ordner `ml/` mit aktivierter virtueller Umgebung. Die `.env` mit `DATABASE_URL`
-liegt im Ordner `ml/` und wird nicht committet.
+Im Ordner `ml/` mit aktivierter virtueller Umgebung. Die `.env` mit `DATABASE_URL` liegt in
+`ml/` und wird nicht committet.
 
 ```powershell
-pip install -r requirements.txt   # u. a. scikit-learn, joblib, matplotlib
+pip install -r requirements.txt   # scikit-learn (ab 1.3), joblib, matplotlib, numpy
+pip install lightgbm              # optional, wird sonst im Vergleich übersprungen
 python train.py                   # Training, Bewertung, Backtest, Modell speichern
-python analyse.py                 # Diagramme und Tabellen in results/
-python predict.py                 # Beispielprognosen im Terminal
+python analyse.py                 # Tabellen und Diagramme in results/
 python predict_batch.py           # schreibt die Prognose-Tabellen in die Datenbank
+python predict.py                 # optional: Beispielprognosen im Terminal
 ```
 
-`train.py` braucht wegen Parameter-Suche und Backtest einige Minuten. Mit `TUNING = False`
-und `BACKTEST = False` oben in der Datei läuft ein schneller Test. Der Zufall ist über
-`RANDOM_STATE = 42` festgelegt. Die Ergebnisse hängen vom Datenstand ab, weil
-`traffic_data` laufend wächst.
+`train.py` braucht wegen Parameter-Suche, vielen Modellen und Backtest mehrere Minuten bis etwa
+eine halbe Stunde. Für einen schnellen Test: `TUNING = False` und `BACKTEST = False` oben in der
+Datei. Der Zufall ist über `RANDOM_STATE = 42` festgelegt. Die Ergebnisse hängen vom Datenstand
+ab, weil `traffic_data` laufend wächst. `predict_batch.py` nach jedem neuen Training erneut
+ausführen, damit die Tabellen zum gespeicherten Modell passen.
 
 ## 3. Daten und Bereinigung
 
-- Quelle: Tabelle `traffic_data` (Stand dieser Auswertung: 10.11.2026, 88 252 Rows nach
-  der Bereinigung, rund zwei Wochen Betriebstage).
-- Rows ohne Verspätungswert oder ohne Zeitpunkt und Verspätungen über ±60 Minuten werden
-  entfernt (88 258 → 88 252 Rows im Training, wenige Ausreißer).
+- Quelle: Tabelle `traffic_data`. Stand der Analyse: 113 834 Rows, nach der Bereinigung
+  113 802. Das Training lief mit 112 965 bereinigten Rows (Stand 14.11. mittags).
+- Entfernt werden Rows ohne Verspätungswert oder Zeitpunkt und Verspätungen über ±60 Minuten
+  (wenige Ausreißer, rund 30 Rows).
 - Ein leerer Wert bei den Ereignis-Distanzen heißt "kein Ereignis in der Nähe" und wird durch
-  10 km ersetzt (nicht durch 0). Zusätzlich gibt es die Flags `has_roadwork` und
-  `has_traffic_event`.
+  10 km ersetzt (nicht durch 0). Dazu gibt es die Flags `has_roadwork` und `has_traffic_event`.
 - Alle Zeit-Features (Stunde, Wochentag usw.) werden aus der **Sollzeit** abgeleitet
-  (Realtime-Zeit minus Verspätung, Berliner Zeit). Würde man die Realtime-Zeit nehmen, steckte
-  die Verspätung indirekt in den Features (Data Leakage).
+  (Realtime-Zeit minus Verspätung, Berliner Zeit). Mit der Realtime-Zeit würde die Verspätung
+  indirekt in den Features stecken (Data Leakage).
 - Die Spalten `arrival_delay_seconds`, `departure_delay_seconds` und `delay_seconds` sowie die
   Realtime-Zeiten sind keine Features.
 
@@ -481,99 +486,144 @@ und `BACKTEST = False` oben in der Datei läuft ein schneller Test. Der Zufall i
 | Gruppe | Features |
 | --- | --- |
 | Zeit (aus Sollzeit) | `stunde`, `stunde_sin`, `stunde_cos`, `wochentag`, `ist_wochenende`, `ist_hauptverkehrszeit` (Mo–Fr 7–9 und 16–18 Uhr) |
-| Fahrt | `stop_sequence`, Kategorien `route_short_name`, `route_type`, `stop_name` (Kategorien mit weniger als 100 Rows werden gebündelt) |
+| Fahrt | `stop_sequence`; Kategorien `route_short_name`, `route_type`, `stop_name` (Kategorien mit weniger als 100 Rows werden gebündelt) |
 | Wetter | `temperature_2m`, `precipitation`, `wind_speed_10m` |
-| Baustellen und Verkehr | `roadwork_count`, `has_roadwork`, `nearest_roadwork_distance_km`, `traffic_event_count`, `has_traffic_event`, `nearest_traffic_distance_km` |
-| Alerts | `alert_count` |
+| Baustellen, Verkehr, Alerts | `roadwork_count`, `has_roadwork`, `nearest_roadwork_distance_km`, `traffic_event_count`, `has_traffic_event`, `nearest_traffic_distance_km`, `alert_count` |
 | Aktuelle Lage | `lag_linie_min`, `lag_linie_n`, `lag_netz_min`, `lag_netz_n`: mittlere Verspätung **anderer** Fahrten derselben Linie bzw. des ganzen Netzes in der Stunde vor der Beobachtung (10-Minuten-Raster, die eigene Fahrt ist ausgeschlossen) und die Anzahl der Rows dahinter |
 | Vorgänger-Fahrt | `vorgaenger_min`, `vorgaenger_abstand_min`: Verspätung der vorherigen Fahrt derselben Linie an derselben Haltestelle (höchstens 90 Minuten davor) und der Fahrplan-Abstand dazu |
+| Historische Muster | vier Schlüssel `k_linie_halt`, `k_linie_tag_std`, `k_halt_tag_std`, `k_linie_halt_hvz` (Kombinationen aus Linie, Haltestelle, Tagtyp Mo–Fr/Sa/So, Stunde und Hauptverkehrszeit). Das Modell ersetzt jeden Schlüssel durch die mittlere Verspätung dieser Kombination im Training (Target Encoding) |
 
-Die Lage- und Vorgänger-Features nutzen die vom Anbieter gemeldeten Verspätungen anderer
+Das Target Encoding läuft im Training mit 5-facher Kreuz-Ziehung, damit die eigene Verspätung
+einer Row nicht in ihr eigenes Feature rutscht. Seltene Kombinationen werden zum Gesamtmittel
+gezogen, unbekannte bekommen den Gesamtmittelwert.
+
+Die Lage- und Vorgänger-Features nutzen die vom Anbieter gemeldeten Verspätungen **anderer**
 Fahrten. Sie sind zum Zeitpunkt der Prognose verfügbar und enthalten keine Information der
-eigenen Fahrt. In der Auswertung waren Baustellen- und Verkehrs-Features konstant (keine Fälle im
-Beobachtungszeitraum) und haben deshalb keinen Einfluss.
+eigenen Fahrt. Baustellen- und Verkehrs-Features sind konstant (im Beobachtungszeitraum kein
+einziger Fall) und haben deshalb keinen Einfluss.
 
 ## 5. Modelle und Bewertung
 
-- **Baselines:** konstante Schätzung mit Mittelwert bzw. Median der Trainingsdaten.
-- **Einfache Regression:** nur ein Feature (das mit der stärksten Korrelation, `lag_linie_min`).
+- **Baselines:** konstante Schätzung mit Mittelwert bzw. Median der Trainingsdaten. Sie lernen
+  nichts und sind nur der Vergleichsmaßstab.
+- **Einfache Regression:** nur ein Feature, das mit der stärksten Korrelation (`lag_linie_min`).
 - **Multiple Regression:** Lineare Regression und Ridge mit allen Features.
-- **Random Forest:** 150 Bäume, `min_samples_leaf = 20`.
-- **Gradient Boosting:** einmal mit MAE-Verlust (`absolute_error`) und einmal mit RMSE-Verlust
-  (`squared_error`). Die Parameter (`learning_rate`, `max_leaf_nodes`, `min_samples_leaf`)
-  werden per Zeitreihen-Kreuzvalidierung (`TimeSeriesSplit`) nur auf den Trainingstagen gesucht.
-- **Split:** zeitlich. Die letzten ca. 20 % der Betriebstage sind der Test (hier die letzten
-  3 Tage: 08.11., 09.11., 10.11.), alle früheren Tage sind das Training. Es gibt kein eigenes
-  Validierungsset, die Parameter-Suche läuft intern auf dem Training.
-- **Backtest:** Für jeden der letzten 4 Tage wird auf allen früheren Tagen trainiert und genau
-  dieser Tag getestet. Das ist robuster als nur ein Testzeitraum.
-- **Kennzahlen:** MAE (mittlerer Fehler in Minuten), RMSE (große Fehler zählen stärker) und
-  R² (Anteil der erklärten Schwankung, 0 = nicht besser als der Mittelwert).
-- **Modellauswahl:** Gespeichert wird das Modell mit dem kleinsten mittleren MAE im Backtest.
+- **Baum-Modelle:** Random Forest, Extra Trees, Gradient Boosting mit MAE-Verlust und mit
+  RMSE-Verlust, Gradient Boosting mit nativen Kategorien (Linie und Haltestelle direkt als
+  Kategorie statt One-Hot), optional LightGBM.
+- **Mix:** Mittel aus dem getunten Gradient Boosting (MAE) und dem Random Forest.
+- **Tuning:** Die Parameter der beiden Gradient-Boosting-Modelle werden per
+  Zufallssuche (20 Kombinationen) mit Zeitreihen-Kreuzvalidierung (`TimeSeriesSplit`) nur auf den
+  Trainingstagen gesucht.
+- **Split:** zeitlich. Die letzten ca. 20 % der Betriebstage sind der Test (12., 13. und
+  14.11.), alle früheren Tage das Training (98 925 Rows, Test 14 040 Rows).
+- **Backtest:** Für jeden der letzten 4 Tage (11. bis 14.11.) wird auf allen früheren Tagen
+  trainiert und genau dieser Tag getestet. Das ist robuster als ein einzelner Testzeitraum.
+- **Kennzahlen:** MAE (mittlerer Fehler in Minuten), RMSE (große Fehler zählen stärker) und R²
+  (Anteil der erklärten Schwankung, 0 = nicht besser als der Mittelwert).
+- **Modellauswahl:** Gespeichert wird automatisch das Modell mit dem kleinsten mittleren MAE im
+  Backtest (Baselines und einfache Regression zählen nicht).
 
-## 6. Ergebnisse (Stand 10.11.2026)
+## 6. Ergebnisse (Stand 14.11.2026)
 
-Testset (3 Tage, 15 128 Rows, Training 73 124 Rows):
+Testset (3 Tage, 14 040 Rows):
 
 | Modell | MAE (min) | RMSE (min) | R² |
 | --- | ---: | ---: | ---: |
-| Baseline Mittelwert | 2,897 | 5,165 | −0,001 |
-| Baseline Median | 2,660 | 5,288 | −0,049 |
-| Einfache Regression (`lag_linie_min`) | 2,712 | 4,995 | 0,064 |
-| Lineare Regression | 2,663 | 4,753 | 0,153 |
-| Random Forest | 2,662 | 4,782 | 0,142 |
-| Gradient Boosting (RMSE) | 2,713 | 4,773 | 0,146 |
-| **Gradient Boosting (MAE)** | **2,231** | 4,811 | 0,132 |
+| Baseline Mittelwert | 2,760 | 5,389 | −0,000 |
+| Baseline Median | 2,583 | 5,510 | −0,046 |
+| Einfache Regression (`lag_linie_min`) | 2,754 | 5,358 | 0,011 |
+| Lineare Regression (Ridge gleich) | 2,456 | 4,761 | 0,219 |
+| Random Forest | 2,155 | 4,249 | 0,378 |
+| Extra Trees | 2,153 | 4,341 | 0,351 |
+| Gradient Boosting (RMSE) | 2,214 | 4,276 | 0,370 |
+| Gradient Boosting (MAE) | 2,114 | 4,751 | 0,223 |
+| LightGBM (MAE) | 2,107 | 4,715 | 0,234 |
+| Mix: Gradient Boosting (MAE) + Random Forest | 2,103 | 4,437 | 0,322 |
+| **Gradient Boosting nativ (MAE)** | **2,076** | 4,684 | 0,244 |
 
 Backtest, MAE je Tag (Minuten):
 
-| Modell | Sa 07.11. | So 08.11. | Mo 09.11. | Di 10.11. | Mittel |
+| Modell | Mi 11.11. | Do 12.11. | Fr 13.11. | Sa 14.11. | Mittel |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Baseline Median | 2,144 | 1,713 | 3,394 | 2,362 | 2,403 |
-| Lineare Regression | 2,264 | 1,984 | 3,231 | 2,299 | 2,445 |
-| Gradient Boosting (RMSE) | 2,661 | 2,423 | 3,119 | 2,033 | 2,559 |
-| **Gradient Boosting (MAE)** | **1,882** | **1,411** | **2,884** | **1,898** | **2,019** |
+| Baseline Median | 2,522 | 2,760 | 2,408 | 2,046 | 2,434 |
+| Lineare Regression | 2,542 | 2,607 | 2,377 | 1,800 | 2,332 |
+| Gradient Boosting (RMSE) | 2,203 | 2,337 | 2,149 | 1,885 | 2,143 |
+| Extra Trees | 2,066 | 2,258 | 2,121 | 1,612 | 2,014 |
+| Gradient Boosting (MAE) | 2,040 | 2,221 | 2,053 | 1,645 | 1,990 |
+| LightGBM (MAE) | 2,050 | 2,207 | 2,034 | 1,663 | 1,988 |
+| Mix | 1,999 | 2,201 | 2,081 | 1,597 | 1,969 |
+| **Gradient Boosting nativ (MAE)** | **1,996** | **2,175** | **2,003** | 1,616 | **1,948** |
 
-Das gespeicherte Modell ist **Gradient Boosting (MAE)**. Es liegt auf dem Testset 16 % und im
-Backtest-Mittel ebenfalls 16 % unter dem MAE der Median-Baseline und ist an jedem der vier
-Tage besser (12 bis 20 %). Der mittlere Fehler beträgt etwa 2,0 bis 2,2 Minuten.
+Das gespeicherte Modell ist **Gradient Boosting nativ (MAE)** (Version
+`Gradient_Boosting_nativ_MAE_20261114_1202`). Es liegt auf dem Testset 19,6 % und im
+Backtest-Mittel 20,0 % unter dem MAE der Median-Baseline und ist an jedem der vier Tage etwa
+17 bis 21 % besser. Der mittlere Fehler beträgt **etwa 2,0 Minuten** (Test 2,08, Backtest 1,95).
 
-**Einordnung:**
+**Einordnung**
 
-- Das Modell erkennt Muster (Hauptverkehrszeit, Linie, Position in der Fahrt, aktuelle Lage), kann
-  die Verspätung einer einzelnen Fahrt aber nur grob schätzen. Der Fehler von etwa 2 Minuten ist
-  fast so groß wie die typische Verspätung (Median 1,6 Minuten).
-- R² liegt bei etwa 0,1 bis 0,15 und schwankt von Tag zu Tag (Backtest-Mittel 0,09 bis 0,11). Die
-  Features erklären nur einen kleinen Teil der Schwankung.
-- **MAE und R² laufen auseinander:** Modelle mit RMSE-Verlust sagen eher den Mittelwert voraus
-  (2,6 Minuten), der wegen der Ausreißer über dem typischen Wert (Median 1,6 Minuten) liegt. Sie
-  haben deshalb den besseren R², aber einen schlechteren MAE als die Median-Baseline. Das
-  MAE-Modell trifft den typischen Fall besser und erfasst große Ausschläge kaum.
-- **Wichtigste Einflüsse** (Random Forest): aktuelle Lage der Linie (`lag_linie_min`), Uhrzeit
-  (`stunde_sin`, `stunde_cos`), Lage im Netz, `stop_sequence` und Verspätung der Vorgänger-Fahrt.
-  Eine einzelne Haltestelle oder Linie hat dagegen kaum Gewicht. Für Aussagen zu Linien und
-  Haltestellen eignen sich die Tabellen aus `analyse.py`, weil seltene Kategorien in den
-  Koeffizienten der linearen Regression stark schwanken.
+- Das Modell erkennt Muster (Tageszeit, Linie, Haltestelle, aktuelle Lage), kann die Verspätung
+  einer einzelnen Fahrt aber nur grob schätzen. Der Fehler von rund 2 Minuten ist fast so groß
+  wie die typische Verspätung (Median 1,6 Minuten).
+- Die Unterschiede zwischen den besten Modellen sind klein (zwischen 1,95 und 2,01 im Backtest)
+  und liegen innerhalb der Schwankung zwischen einzelnen Tagen. Das spricht dafür, dass die
+  Grenze in den Daten liegt und nicht im Algorithmus.
+- **MAE und R² laufen auseinander:** Modelle mit RMSE-Verlust oder Random Forest sagen eher den
+  Mittelwert voraus (2,7 Minuten), der wegen der Ausreißer über dem typischen Wert (Median
+  1,6 Minuten) liegt. Sie haben deshalb das bessere R² (bis 0,38), aber einen schlechteren MAE.
+  Das MAE-Modell trifft den typischen Fall besser und erfasst große Ausschläge kaum.
+- **Wichtigste Einflüsse** (Random Forest): die typische Verspätung der Linie nach Tagtyp und
+  Stunde (`k_linie_tag_std`, 24 %), die der Haltestelle nach Tagtyp und Stunde (10 %), die
+  aktuelle Lage der Linie und des Netzes (je 7 bis 8 %), die Position in der Fahrt, die Uhrzeit
+  und Linie-Haltestelle in der Hauptverkehrszeit. Wind (3 %) und Temperatur (3 %) haben etwas
+  Gewicht, vermutlich auch deshalb, weil sich das Wetter von Tag zu Tag ändert und das Modell
+  damit Tage unterscheiden kann. Ein Einfluss auf die Verspätung ist daraus nicht ableitbar.
+- Die Koeffizienten der linearen Regression werden von einzelnen seltenen Linien und
+  Haltestellen dominiert. Für Aussagen zu Linien und Haltestellen eignen sich die Tabellen aus
+  `analyse.py`.
 
-**Muster aus der Analyse** (`ml/results/analyse_*.csv` und `.png`):
+**Muster aus der Analyse** (113 802 Rows, `ml/results/analyse_*.csv` und `.png`):
 
-- Die Verspätung ist zur Hauptverkehrszeit am höchsten (7–8 Uhr und 16–17 Uhr, im Mittel 3,2 bis
-  4,1 Minuten), nachts und spät abends am niedrigsten (etwa 0,6 bis 1,5 Minuten).
-- Montag bis Freitag liegt der Mittelwert bei 2,6 bis 3,4 Minuten, samstags bei 2,2, sonntags
-  bei 1,2 Minuten.
-- Einzelne Buslinien (z. B. 694, 683, 8, 682) und Haltestellen in Böckingen liegen deutlich über
-  dem Durchschnitt (5 bis 7 Minuten).
-- Die Verteilung hat dicke Ränder: Median 1,6 Minuten, Mittel 2,7 Minuten, 14,5 % der Rows mit
-  mindestens 5 Minuten und 4,1 % mit mindestens 10 Minuten Verspätung.
-- Regen kam im Zeitraum nur in rund 2 300 Rows vor. Die niedrigeren Werte in den Regenklassen
-  hängen vermutlich mit dem Wochenende oder der Nachtzeit zusammen und sind keine Aussage zum
-  Einfluss von Regen.
+- Verteilung: Mittel 2,7 Minuten, Median 1,6 Minuten. 29,3 % der Rows haben mindestens 3,
+  14,6 % mindestens 5 und 4,1 % mindestens 10 Minuten Verspätung, 12,0 % sind zu früh.
+- Tageszeit: am höchsten zur Hauptverkehrszeit am Nachmittag (16 Uhr 4,3 Minuten, 17 Uhr
+  4,1 Minuten) und morgens (7 und 8 Uhr: 3,1 bis 3,3 Minuten), nachts und spät abends am
+  niedrigsten (0,7 bis 1,5 Minuten).
+- Wochentag: Montag 3,4 Minuten, Dienstag 3,1, Donnerstag 3,0, Freitag 2,8, Mittwoch 2,6,
+  Samstag 2,1 und Sonntag 1,2 Minuten.
+- Linien: Einzelne Linien liegen deutlich über dem Durchschnitt (694: 7,2, 683: 5,8, 648HN: 5,2,
+  682: 5,1 und 8: 5,1 Minuten), allerdings meist mit wenigen Rows (100 bis 950). Die größte Linie
+  61 (22 224 Rows) hat im Mittel 4,5 Minuten.
+- Haltestellen: Böckingen (Buchenhof 6,0, Derfflingerstraße 5,7, Schanz Nord 5,4 Minuten) und
+  der Busbahnhof am Hauptbahnhof (5,6) liegen vorn.
+- Wetter: Starker Regen (über 2 mm) geht mit 4,3 Minuten einher, aber nur 577 Rows (0,5 %). Bei
+  leichtem und mittlerem Regen liegen die Werte unter dem Durchschnitt, wahrscheinlich weil
+  Regen mit Wochenende oder Nachtzeit zusammenfällt. Die Korrelation zwischen Regen und
+  Verspätung ist praktisch null (0,02). Bei Wind (2,6 Minuten bis 10 km/h, 3,2 über 20 km/h)
+  und Temperatur (10 bis 20 °C: 3,0, bis 0 °C: 1,6) gibt es leichte Unterschiede, die sich mit
+  Tageszeit und Jahreszeit vermischen. Das sind Korrelationen und kein Beleg für Ursachen.
+- Baustellen und Verkehrsmeldungen: im Zeitraum keine Fälle, ein Vergleich war nicht möglich.
+- Korrelation mit der Verspätung: `lag_linie_min` 0,21, `vorgaenger_min` 0,17, `lag_netz_min`
+  0,16, Hauptverkehrszeit 0,15, `stop_sequence` 0,14, Wochenende −0,10. Alles andere liegt
+  unter 0,1.
 
-## 7. Tabellen für das Dashboard (Grafana)
+## 7. Verworfene Variante: Fahrtverlauf
+
+Zusätzlich haben wir ein Modell getestet, das die Verspätung der vorherigen Haltestellen
+**derselben Fahrt** als Feature bekommt (`FAHRT_FEATURES = True` in `train.py`). Es erreichte
+eine MAE von 0,74 Minuten (Test, Stand 13.11.). Wir nutzen es nicht, weil es im Wesentlichen die
+aktuelle Verspätung fortschreibt: Die einfache Regel `y = 0,178 + 0,983 · Verspätung am
+vorherigen Halt` kommt allein schon auf 0,95 Minuten, und im Random Forest haben die
+Fahrtverlauf-Features rund 90 % der Wichtigkeit, Uhrzeit, Linie, Wetter und Lage zählen kaum
+noch. Das Modell sagt dann "wie verspätet ist der Bus am nächsten Halt, wenn er am letzten
+3 Minuten spät war", erklärt aber keine Muster und Ursachen. Für die Aufgabe nutzen wir deshalb
+die Vorab-Prognose ohne Fahrtverlauf.
+
+## 8. Tabellen für das Dashboard (Grafana)
 
 `predict_batch.py` schreibt vier eigene Tabellen in dieselbe Datenbank (`traffic_data` bleibt
 unverändert). Sie werden bei jedem Lauf komplett neu geschrieben, damit alle Prognosen vom
-aktuellen Modell stammen.
+aktuellen Modell stammen. Letzter Lauf: 113 802 Rows (davon 98 925 `train`, 14 877 `test`).
 
 **`ml_predictions`** (eine Row pro Fahrt und Halt):
 
@@ -585,11 +635,11 @@ aktuellen Modell stammen.
 | `prediction_created_at` | Zeitpunkt der Berechnung (UTC) |
 | `predicted_delay_seconds` | vorhergesagte Verspätung des Modells in Sekunden |
 | `reference_delay_seconds` | vom Anbieter gemeldete Verspätung (GTFS-Realtime), keine unabhängig gemessene Ist-Zeit |
-| `model_version` | Modellname und Trainingszeitpunkt, z. B. `Gradient_Boosting_MAE_20261110_1054` |
+| `model_version` | Modellname und Trainingszeitpunkt, z. B. `Gradient_Boosting_nativ_MAE_20261114_1202` |
 | `dataset_split` | `train` (Tag im Training), `test` (Testtag), `neu` (Tag nach dem Training) |
 
-Für eine faire Bewertung nur Rows mit `dataset_split <> 'train'` verwenden, weil das Modell
-die Trainingstage kennt:
+Für eine faire Bewertung nur Rows mit `dataset_split <> 'train'` verwenden, weil das Modell die
+Trainingstage kennt:
 
 ```sql
 SELECT dataset_split,
@@ -602,9 +652,10 @@ GROUP BY dataset_split;
 
 Weitere Tabellen:
 
-- `delay_predictions`: wie oben, zusätzlich mit `stop_name`, `route_short_name`, `delay_min`,
-  `prediction_min` und `error_min` (bequem für Diagramme).
-- `model_metrics`: Modellvergleich (`model`, `mae_min`, `rmse_min`, `r2`).
+- `delay_predictions`: dieselben Prognosen, zusätzlich mit `stop_name`, `route_short_name`,
+  `delay_min`, `prediction_min` und `error_min` (Minuten statt Sekunden, `service_date` als Text,
+  ohne `dataset_split`).
+- `model_metrics`: Modellvergleich (`model`, `mae_min`, `rmse_min`, `r2`), 12 Modelle.
 - `feature_importance`: Feature-Wichtigkeit des Random Forest (`feature`, `importance`).
 
 Linie und Haltestellenname zu `ml_predictions` dazuholen:
@@ -617,37 +668,42 @@ JOIN delay_predictions d
  AND d.service_date = to_char(m.service_date, 'YYYYMMDD');
 ```
 
-Die Prognosen sind nur so aktuell wie der letzte Lauf von `predict_batch.py`.
+Die Prognosen sind nur so aktuell wie der letzte Lauf von `predict_batch.py`. Sie bilden eine
+Prognose pro Row aus `traffic_data`. Dadurch wächst die Tabelle mit den Daten.
 
-## 8. Einzelne Prognose in Python
+## 9. Einzelne Prognose in Python
 
 ```python
 from predict import prognose
 
 minuten = prognose(linie="61", stunde=8, wochentag=0, stop_sequence=5,
+                   haltestelle="Hauptbahnhof Busbahnhof, Heilbronn",
                    lag_linie_min=3.5)   # Wochentag: 0 = Montag
 ```
 
 Nicht angegebene Werte (z. B. Wetter oder Lage) füllt die Pipeline mit dem Median aus dem
-Training auf. Je mehr Werte angegeben sind, desto genauer die Prognose. Die Lage- und
-Vorgänger-Werte lassen sich aus der Datenbank berechnen (siehe `add_lag_features()` und
-`add_vorgaenger_features()` in `train.py`).
+Training auf. Je mehr Werte angegeben sind, desto genauer die Prognose. Die Lage-Werte lassen
+sich aus der Datenbank berechnen (siehe `add_lag_features()` und `add_vorgaenger_features()` in
+`train.py`). `predict.py` importiert aus `train.py` und muss im selben Ordner liegen.
 
-## 9. Grenzen
+## 10. Grenzen
 
 - **Zielvariable:** Das Modell lernt die Prognose des Anbieters, keine gemessene Ist-Zeit.
-- **Kurzer Zeitraum:** Rund zwei Wochen Daten, mit wenigen Wochenenden. Der Testzeitraum
-  enthält mit dem aktuellen Tag einen unvollständigen Tag. Einzelne Tage (z. B. ein Montag mit
-  einer Störung) beeinflussen das Ergebnis stark, deshalb gibt es den Backtest.
-- **Fehlende Variation:** Baustellen und Verkehrsmeldungen kamen im Zeitraum nicht vor, Regen
-  fast nicht. Ob sie die Verspätung beeinflussen, konnte nicht bewertet werden.
-- **Geringe Erklärungskraft:** R² von etwa 0,1. Viele Verspätungen entstehen durch
-  Einzelereignisse (Störung, Unfall, Fahrzeugausfall), die in keiner Spalte stehen.
-- **Seltene Kombinationen** (z. B. selten befahrene Linie spät abends) sind unsicher, weil das Modell
-  dafür wenige Beispiele gesehen hat.
+- **Kurzer Zeitraum:** Rund drei Wochen Daten. Einzelne Tage (Störung, Feiertag) beeinflussen das
+  Ergebnis stark, deshalb gibt es den Backtest. Der letzte Tag im Test (14.11.) war beim Training
+  noch nicht vollständig.
+- **Fehlende Variation:** Baustellen und Verkehrsmeldungen kamen nicht vor, starker Regen nur
+  in 0,5 % der Rows. Ob sie die Verspätung beeinflussen, konnte nicht bewertet werden.
+  Zusätzliche Datenquellen wurden nicht ergänzt, es werden nur die Daten aus der API genutzt.
+- **Geringe Erklärungskraft:** R² zwischen 0,2 und 0,4 je nach Modell. Viele Verspätungen
+  entstehen durch Einzelereignisse (Störung, Unfall, Fahrzeugausfall), die in keiner Spalte
+  stehen. Mit den vorhandenen Daten ist eine deutlich kleinere MAE als etwa 2 Minuten nicht
+  zu erwarten: Alle getesteten Modelle liegen eng beieinander.
+- **Seltene Kombinationen** (z. B. selten befahrene Linie spät abends) sind unsicher, weil das
+  Modell dafür wenige Beispiele gesehen hat. Die historischen Muster beruhen auf wenigen Wochen.
 - **Lage- und Vorgänger-Features** nutzen Anbieterwerte anderer Fahrten. Im Live-Betrieb müssen
   die aktuellen Rows dafür in der Datenbank vorliegen.
-- Die Ergebnisse ändern sich, sobald mehr Daten vorliegen. Mit längerer Datenerfassung
-  (mehr Wochen, Ferien, Regen, Baustellen) sollte neu trainiert werden.
+- Die Ergebnisse ändern sich mit mehr Daten. Nach längerer Datenerfassung (mehr Wochen, Ferien,
+  Regen, Baustellen) sollte neu trainiert werden.
 
 # Visualisierung - Mohamad
