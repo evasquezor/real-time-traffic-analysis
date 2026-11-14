@@ -1,43 +1,3 @@
-"""
-train.py (Version 6) - Verspaetungsprognose (Regression) fuer den Raum Heilbronn
-
-Laedt die Tabelle `traffic_data` aus PostgreSQL/Neon, baut Features, trainiert
-Baselines und Regressionsmodelle, bewertet sie auf einem zeitlich getrennten
-Testset (letzte Tage) und speichert das beste Modell.
-
-Neu in Version 6:
-  - Zusaetzliche Modelle im Vergleich: Extra Trees, Gradient Boosting mit nativen Kategorien
-    und (nur wenn das Paket `lightgbm` installiert ist) LightGBM. Die automatische Auswahl
-    nach dem Backtest-MAE bleibt gleich.
-
-Version 5:
-  - Historische Muster (HISTORIE_FEATURES): durchschnittliche Verspaetung je Kombination aus
-    Linie/Haltestelle/Tagtyp/Stunde, gelernt per Target Encoding (im Training mit
-    Kreuz-Ziehung, damit die eigene Verspaetung nicht in das eigene Feature rutscht)
-  - Feineres Tuning (RandomizedSearchCV, mehr Parameter) und ein Mix-Modell aus
-    Gradient Boosting (MAE) + Random Forest
-  - FAHRT_FEATURES ist standardmaessig aus (Vorab-Prognose ohne Fahrtverlauf)
-
-Version 4:
-  - Fahrtverlauf-Features (FAHRT_FEATURES = True): Verspaetung der vorherigen Haltestellen
-    DERSELBEN Fahrt. Das macht aus der Aufgabe eine Kurzfristprognose ("wie verspaetet ist
-    die Fahrt am naechsten Halt, wenn ich ihre aktuelle Verspaetung kenne?"). Mit
-    FAHRT_FEATURES = False entsteht wie bisher eine Prognose ohne Fahrtverlauf.
-
-Neu gegenueber Version 1:
-  - Lage-Features: mittlere Verspaetung der Linie bzw. des ganzen Netzes in der
-    Stunde VOR der Beobachtung (nur andere Fahrten, nur Vergangenheit)
-  - Uhrzeit als Sinus/Cosinus, Flag Hauptverkehrszeit
-  - Haltestelle als Kategorie, seltene Kategorien werden gebuendelt
-  - Gradient Boosting (mit MAE-Verlust und mit RMSE-Verlust), per Zeitreihen-
-    Kreuzvalidierung auf den Trainingstagen abgestimmt (Testtage bleiben tabu)
-  - Random Forest mit glatteren Einstellungen
-
-Start:
-    python train.py
-Voraussetzung: .env mit DATABASE_URL (wie bei prepare_data.py)
-"""
-
 import os
 import re
 import warnings
@@ -57,7 +17,7 @@ from sklearn.dummy import DummyRegressor
 from sklearn.ensemble import (ExtraTreesRegressor, HistGradientBoostingRegressor,
                               RandomForestRegressor, VotingRegressor)
 from sklearn.impute import SimpleImputer
-from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import GroupShuffleSplit, KFold, RandomizedSearchCV, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
@@ -84,17 +44,16 @@ LAG_BUCKETS = 6               # 6 x 10 min = die letzte Stunde vor der Beobachtu
 TUNING = True                 # False = schneller, ohne Parameter-Suche
 VORGAENGER_MAX_MIN = 90       # Vorgaenger-Fahrt zaehlt nur, wenn sie hoechstens so weit zurueckliegt
 FAHRT_FEATURES = False        # True = Verlauf der eigenen Fahrt als Feature (Kurzfristprognose)
+NEUE_FEATURES = True          # zusaetzliche Lage-, Takt- und Positions-Features
+Y_BEGRENZEN = 30              # Training: Verspaetungen auf +-30 min begrenzen (None = aus)
+BACKTEST_TOP_N = 4            # so viele der besten Modelle kommen in den Backtest
 HISTORIE_FEATURES = True      # historische Muster je Linie/Haltestelle/Tagtyp/Stunde
-TUNING_ITERATIONEN = 20       # so viele Parameter-Kombinationen probiert die Suche
+TUNING_ITERATIONEN = 12       # so viele Parameter-Kombinationen probiert die Suche
 BACKTEST = True               # Bewertung ueber mehrere einzelne Tage (dauert etwas laenger)
 BACKTEST_TAGE = 4             # so viele der letzten Tage werden einzeln nachgerechnet
 MIX_NAME = "Mix: Gradient Boosting (MAE) + Random Forest"
 NATIV_NAME = "Gradient Boosting nativ (MAE)"
-BACKTEST_MODELLE = [
-    "Baseline: Median", "Baseline: Mittelwert", "Lineare Regression",
-    "Gradient Boosting (MAE)", "Gradient Boosting (RMSE)", MIX_NAME,
-    "Extra Trees", NATIV_NAME, "LightGBM (MAE)",   # nicht vorhandene werden uebersprungen
-]
+
 WOCHENTAGE_KURZ = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
 BASIS_FEATURES = [
@@ -131,7 +90,19 @@ FAHRT_FEATURE_LISTE = [
     "fahrt_mittel_min",       # Mittel der Verspaetung an allen frueheren Halten
     "fahrt_n_vorher",         # Anzahl frueherer Halte
 ]
-NUM_FEATURES = BASIS_FEATURES + (FAHRT_FEATURE_LISTE if FAHRT_FEATURES else [])
+# Zusaetzliche Features, alle aus vorhandenen Spalten (keine neuen Daten):
+NEUE_FEATURE_LISTE = [
+    "lag_halt_min", "lag_halt_n",          # Lage an derselben Haltestelle, alle Linien (30 min)
+    "lag_linie_kurz_min", "lag_linie_kurz_n",  # Lage der Linie in den letzten 20 min
+    "lag_netz_kurz_min",                   # Lage im Netz in den letzten 20 min
+    "trend_linie_min", "trend_netz_min",   # kurze Lage minus Lage der Stunde (wird es schlimmer?)
+    "naechster_abstand_min",               # Fahrplan-Abstand zur naechsten Fahrt (Takt)
+    "vorgaenger3_min", "vorgaenger3_n",    # Mittel der letzten 3 Vorgaenger-Fahrten, Anzahl
+    "linie_laenge", "pos_rel",             # typische Laenge der Linie, relative Position
+    "ist_erster_halt", "ist_letzter_halt",
+]
+NUM_FEATURES = (BASIS_FEATURES + (FAHRT_FEATURE_LISTE if FAHRT_FEATURES else [])
+                + (NEUE_FEATURE_LISTE if NEUE_FEATURES else []))
 CAT_FEATURES = ["route_short_name", "route_type", "stop_name"]
 # Kombinationen (Text), die per Target Encoding zur mittleren Verspaetung der Kombination werden
 HIST_FEATURES = (
@@ -156,7 +127,7 @@ def load_data() -> pd.DataFrame:
 # ----------------------------------------------------------------------
 # 2. Features bauen
 # ----------------------------------------------------------------------
-def _vorlauf(df: pd.DataFrame, keys: list):
+def _vorlauf(df: pd.DataFrame, keys: list, von: int = 1, bis: int = None):
     """Summe und Anzahl der Verspaetungen in den LAG_BUCKETS Zeitfenstern VOR dem
     eigenen Zeitfenster, gruppiert nach `keys` (leere Liste = ganzes Netz)."""
     agg = (
@@ -167,7 +138,8 @@ def _vorlauf(df: pd.DataFrame, keys: list):
     basis = df[keys + ["bucket"]]
     summe = np.zeros(len(df))
     anzahl = np.zeros(len(df))
-    for k in range(1, LAG_BUCKETS + 1):
+    bis = LAG_BUCKETS if bis is None else bis
+    for k in range(von, bis + 1):
         tmp = agg.copy()
         tmp["bucket"] = tmp["bucket"] + k  # Fenster k Schritte vorher -> zur Row "verschoben"
         m = basis.merge(tmp, on=keys + ["bucket"], how="left")
@@ -198,6 +170,21 @@ def add_lag_features(df: pd.DataFrame) -> pd.DataFrame:
     df["lag_linie_min"] = mittel(s_l - s_lt, n_l - n_lt)
     df["lag_netz_n"] = n_n - n_nt
     df["lag_netz_min"] = mittel(s_n - s_nt, n_n - n_nt)
+
+    # Neue Lage-Features (nur andere Fahrten, nur fruehere Zeitfenster)
+    s_lk, n_lk = _vorlauf(df, [linie], 1, 2)
+    s_lkt, n_lkt = _vorlauf(df, [linie, "trip_id"], 1, 2)
+    s_nk, n_nk = _vorlauf(df, [], 1, 2)
+    s_nkt, n_nkt = _vorlauf(df, ["trip_id"], 1, 2)
+    s_h, n_h = _vorlauf(df, ["stop_id"], 1, 3)
+    s_ht, n_ht = _vorlauf(df, ["stop_id", "trip_id"], 1, 3)
+    df["lag_linie_kurz_n"] = n_lk - n_lkt
+    df["lag_linie_kurz_min"] = mittel(s_lk - s_lkt, n_lk - n_lkt)
+    df["lag_netz_kurz_min"] = mittel(s_nk - s_nkt, n_nk - n_nkt)
+    df["lag_halt_n"] = n_h - n_ht
+    df["lag_halt_min"] = mittel(s_h - s_ht, n_h - n_ht)
+    df["trend_linie_min"] = df["lag_linie_kurz_min"] - df["lag_linie_min"]
+    df["trend_netz_min"] = df["lag_netz_kurz_min"] - df["lag_netz_min"]
     return df
 
 
@@ -217,6 +204,38 @@ def add_vorgaenger_features(df: pd.DataFrame) -> pd.DataFrame:
     gueltig = (abstand <= VORGAENGER_MAX_MIN) & (prev_trip != sortiert["trip_id"])
     df["vorgaenger_min"] = prev_delay.where(gueltig).reindex(df.index)
     df["vorgaenger_abstand_min"] = abstand.where(gueltig).reindex(df.index)
+
+    # Takt: Fahrplan-Abstand zur NAECHSTEN Fahrt (Sollzeit, also Fahrplan-Information)
+    next_ts = gruppe["ts_soll"].shift(-1)
+    next_trip = gruppe["trip_id"].shift(-1)
+    abstand_n = (next_ts - sortiert["ts_soll"]).dt.total_seconds() / 60.0
+    gueltig_n = (abstand_n <= VORGAENGER_MAX_MIN) & (next_trip != sortiert["trip_id"])
+    df["naechster_abstand_min"] = abstand_n.where(gueltig_n).reindex(df.index)
+
+    # Mittel der Verspaetung der letzten 3 Vorgaenger-Fahrten (hoechstens 3 x Max-Abstand)
+    werte = []
+    for k in (1, 2, 3):
+        d = gruppe["verspaetung_min"].shift(k)
+        ab = (sortiert["ts_soll"] - gruppe["ts_soll"].shift(k)).dt.total_seconds() / 60.0
+        ok = (ab <= 3 * VORGAENGER_MAX_MIN) & (gruppe["trip_id"].shift(k) != sortiert["trip_id"])
+        werte.append(d.where(ok))
+    werte = pd.concat(werte, axis=1)
+    df["vorgaenger3_min"] = werte.mean(axis=1).reindex(df.index)
+    df["vorgaenger3_n"] = werte.notna().sum(axis=1).reindex(df.index)
+    return df
+
+
+def add_struktur_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Position in der Fahrt, ohne die Verspaetung zu benutzen. Die typische Laenge einer
+    Linie ist das 90 %-Quantil der hoechsten beobachteten stop_sequence je Fahrt."""
+    df = df.copy()
+    fahrt_max = df.groupby(["service_date", "trip_id"])["stop_sequence"].transform("max")
+    df["linie_laenge"] = fahrt_max.groupby(df["route_short_name"]).transform(
+        lambda x: x.quantile(0.9)
+    )
+    df["pos_rel"] = df["stop_sequence"] / df["linie_laenge"].replace(0, np.nan)
+    df["ist_erster_halt"] = (df["stop_sequence"] <= 1).astype(float)
+    df["ist_letzter_halt"] = (df["stop_sequence"] >= df["linie_laenge"]).astype(float)
     return df
 
 
@@ -319,6 +338,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     # Lage-Features (brauchen die bereinigten Rows)
     df = add_lag_features(df)
     df = add_vorgaenger_features(df)
+    df = add_struktur_features(df)
     df = add_fahrt_features(df)
 
     # Numerische Spalten sicher in Zahlen umwandeln
@@ -443,7 +463,6 @@ def make_models() -> dict:
         "Baseline: Mittelwert": _pipe(DummyRegressor(strategy="mean")),
         "Baseline: Median": _pipe(DummyRegressor(strategy="median")),
         "Lineare Regression": _pipe(LinearRegression()),
-        "Ridge Regression": _pipe(Ridge(alpha=1.0)),
         "Random Forest": _pipe(RandomForestRegressor(
             n_estimators=150, min_samples_leaf=20, max_features=0.5,
             n_jobs=-1, random_state=RANDOM_STATE,
@@ -466,6 +485,7 @@ def make_models() -> dict:
 TUNE = {
     "Gradient Boosting (MAE)": "neg_mean_absolute_error",
     "Gradient Boosting (RMSE)": "r2",
+    NATIV_NAME: "neg_mean_absolute_error",
 }
 TUNE_GRID = {
     "model__learning_rate": [0.03, 0.05, 0.1],
@@ -483,6 +503,11 @@ def tune(pipeline: Pipeline, X: pd.DataFrame, y: pd.Series, scoring: str) -> Pip
     suche.fit(X, y)
     print(f"   beste Parameter: {suche.best_params_}")
     return suche.best_estimator_
+
+
+def y_fuer_training(y: pd.Series) -> pd.Series:
+    """Extreme Verspaetungen werden nur beim Lernen begrenzt, die Bewertung nutzt echte Werte."""
+    return y if Y_BEGRENZEN is None else y.clip(lower=-Y_BEGRENZEN, upper=Y_BEGRENZEN)
 
 
 def bewerte(y_true, y_pred) -> dict:
@@ -508,7 +533,7 @@ def backtest(df: pd.DataFrame, vorlagen: dict, n_tage: int) -> pd.DataFrame:
             continue
         wt = WOCHENTAGE_KURZ[pd.Timestamp(str(tag)).weekday()]
         for name, vorlage in vorlagen.items():
-            m = clone(vorlage).fit(tr[feat], tr["verspaetung_min"])
+            m = clone(vorlage).fit(tr[feat], y_fuer_training(tr["verspaetung_min"]))
             zeilen.append({
                 "Tag": f"{tag} ({wt})", "Rows": len(te), "Modell": name,
                 **bewerte(te["verspaetung_min"], m.predict(te[feat])),
@@ -544,6 +569,7 @@ def main():
     split_typ = "zeitlich" if not (set(train_tage) & set(test_tage)) else "fahrtweise"
     train = train.sort_values("ts")  # Reihenfolge der Zeit fuer die Kreuzvalidierung
     X_train, y_train = train[ALLE_FEATURES], train["verspaetung_min"]
+    y_fit = y_fuer_training(y_train)
     X_test, y_test = test[ALLE_FEATURES], test["verspaetung_min"]
 
     print(f"\nVerspaetung im Train: Mittel {y_train.mean():.2f} min, "
@@ -554,9 +580,9 @@ def main():
     for name, modell in make_models().items():
         print(f"Trainiere: {name} ...")
         if TUNING and name in TUNE:
-            modell = tune(modell, X_train, y_train, TUNE[name])
+            modell = tune(modell, X_train, y_fit, TUNE[name])
         else:
-            modell.fit(X_train, y_train)
+            modell.fit(X_train, y_fit)
         pred = modell.predict(X_test)
         ergebnisse.append({"Modell": name, **bewerte(y_test, pred)})
         fitted[name] = (modell, pred)
@@ -567,7 +593,7 @@ def main():
         ("gb", clone(fitted["Gradient Boosting (MAE)"][0])),
         ("rf", clone(fitted["Random Forest"][0])),
     ])
-    mix.fit(X_train, y_train)
+    mix.fit(X_train, y_fit)
     pred_mix = mix.predict(X_test)
     ergebnisse.append({"Modell": MIX_NAME, **bewerte(y_test, pred_mix)})
     fitted[MIX_NAME] = (mix, pred_mix)
@@ -579,7 +605,7 @@ def main():
         ("imputer", SimpleImputer(strategy="median")),
         ("model", LinearRegression()),
     ])
-    einfach.fit(train[[einfach_feature]], y_train)
+    einfach.fit(train[[einfach_feature]], y_fit)
     ergebnisse.append({
         "Modell": f"Einfache Regression ({einfach_feature})",
         **bewerte(y_test, einfach.predict(test[[einfach_feature]])),
@@ -595,8 +621,11 @@ def main():
     # Backtest ueber mehrere einzelne Tage
     bt = None
     if BACKTEST:
-        bt = backtest(df, {n: fitted[n][0] for n in BACKTEST_MODELLE if n in fitted},
-                      BACKTEST_TAGE)
+        echte = tabelle.loc[~tabelle.index.str.startswith(("Baseline", "Einfache"))]
+        beste = [n for n in echte.sort_values("MAE (min)").index if n != "Lineare Regression"]
+        bt_namen = ["Baseline: Median", "Baseline: Mittelwert", "Lineare Regression"] + beste[:BACKTEST_TOP_N]
+        print(f"\nBacktest fuer: {', '.join(bt_namen)}")
+        bt = backtest(df, {n: fitted[n][0] for n in bt_namen if n in fitted}, BACKTEST_TAGE)
 
     # Bestes echtes Modell (ohne Baselines und einfache Regression) nach MAE
     kandidaten = tabelle.loc[~tabelle.index.str.startswith(("Baseline", "Einfache"))]
