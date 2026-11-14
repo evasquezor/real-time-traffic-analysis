@@ -1,187 +1,201 @@
 ,wichtigkeit
-num__lag_linie_min,0.1652
-num__stunde_sin,0.0916
-num__lag_netz_min,0.0845
-num__lag_netz_n,0.0809
-num__stop_sequence,0.0775
-num__vorgaenger_min,0.0751
-num__stunde_cos,0.0681
-num__wind_speed_10m,0.068
-num__lag_linie_n,0.0543
-num__temperature_2m,0.0471
-cat__route_short_name_61,0.0441
-num__vorgaenger_abstand_min,0.0344
-num__wochentag,0.0209
-num__stunde,0.0202
-num__ist_hauptverkehrszeit,0.0158
-cat__route_short_name_42,0.0103
-num__ist_wochenende,0.005
-cat__route_short_name_682,0.005
-cat__route_short_name_10,0.0027
-num__alert_count,0.0024
-cat__route_short_name_12,0.0023
-cat__route_short_name_662,0.0021
-cat__route_short_name_8,0.002
-cat__route_short_name_642,0.0017
-cat__route_short_name_661,0.0017
-cat__route_short_name_641,0.0013
-cat__route_short_name_32,0.0013
-cat__route_short_name_11,0.001
-cat__route_short_name_640,0.001
-cat__route_short_name_41,0.0009
-cat__stop_name_Heilbronn Hbf/Willy-Brandt-Pl. (Steig B),0.0008
-cat__route_short_name_62,0.0008
-cat__route_short_name_688,0.0008
-cat__stop_name_infrequent_sklearn,0.0006
-cat__stop_name_Kirchhausen Schlupf,0.0006
-cat__route_short_name_695,0.0006
-cat__route_short_name_631,0.0006
-cat__route_short_name_13,0.0005
-cat__stop_name_Frankenbach (HN) Maihalde,0.0004
-cat__stop_name_Böckingen Buchenhof,0.0004
-cat__route_short_name_683,0.0004
-cat__route_short_name_620,0.0004
-cat__stop_name_Heilbronn Allee Post West,0.0003
-cat__route_short_name_64,0.0003
-cat__stop_name_Heilbronn Klinikum Heilbronn,0.0003
-cat__route_short_name_1,0.0003
-cat__stop_name_Frankenbach (HN) Frankenbach Rathaus,0.0003
-cat__stop_name_Frankenbach Leintalstraße,0.0003
+hist__k_linie_tag_std,0.2415
+hist__k_halt_tag_std,0.095
+num__lag_linie_min,0.0807
+num__lag_netz_min,0.0702
+num__stop_sequence,0.059
+hist__k_linie_halt_hvz,0.0581
+num__stunde_cos,0.0579
+num__stunde_sin,0.0515
+hist__k_linie_halt,0.0415
+num__lag_linie_n,0.0407
+num__lag_netz_n,0.0355
+num__wind_speed_10m,0.0342
+num__vorgaenger_min,0.031
+num__temperature_2m,0.0272
+num__vorgaenger_abstand_min,0.018
+num__wochentag,0.0135
+num__stunde,0.0116
+cat__route_short_name_61,0.0112
+num__ist_hauptverkehrszeit,0.0049
+num__ist_wochenende,0.0028
+num__precipitation,0.0019
+cat__route_short_name_42,0.0018
+cat__route_short_name_10,0.0008
+num__alert_count,0.0006
+cat__route_short_name_62,0.0006
+cat__route_short_name_642,0.0006
+cat__route_short_name_662,0.0004
+cat__route_short_name_12,0.0004
+cat__stop_name_Heilbronn Südbahnhof Süd,0.0003
+cat__stop_name_Sontheim Max-Planck-Straße,0.0003
+cat__route_short_name_41,0.0003
+cat__route_short_name_661,0.0003
+cat__route_short_name_631,0.0003
+cat__stop_name_Heilbronn Rathaus,0.0003
+cat__stop_name_Heilbronn Hbf/Willy-Brandt-Pl. (Steig B),0.0002
+cat__route_short_name_641,0.0002
+cat__route_short_name_682,0.0002
+cat__route_short_name_620,0.0002
+cat__stop_name_Frankenbach (HN) Maihalde,0.0002
+cat__route_short_name_683,0.0002
+cat__stop_name_Heilbronn Südstraße West,0.0002
+cat__stop_name_Kirchhausen Schlupf,0.0002
+cat__route_short_name_8,0.0002
+cat__stop_name_Böckingen W-Leuschner-Str Süd,0.0002
+cat__stop_name_Heilbronn Allee Post West,0.0002
 cat__stop_name_Frankenbach Maihalde B39,0.0002
-cat__route_short_name_651,0.0002
-cat__stop_name_Böckingen Schanz Nord,0.0002
-cat__stop_name_Sontheim Max-Planck-Straße,0.0002
-cat__stop_name_Heilbronn Rathaus,0.0002
-cat__stop_name_Sontheim Max-von-Laue-Straße,0.0001
-cat__route_short_name_31,0.0001
-cat__stop_name_Heilbronn Neckarturm,0.0001
-cat__stop_name_Böckingen Bruchsaler Straße,0.0001
-cat__stop_name_Böckingen Grünewaldschule,0.0001
-cat__stop_name_Heilbronn Hoover-Siedlung,0.0001
-cat__stop_name_Böckingen W-Leuschner-Str Süd,0.0001
-cat__stop_name_Böckingen Derfflingerstraße,0.0001
+cat__stop_name_Heilbronn Klinikum Heilbronn,0.0001
+cat__stop_name_infrequent_sklearn,0.0001
 cat__stop_name_Heilbronn Hauptbahnhof/Busbahnhof,0.0001
-cat__stop_name_Heilbronn Wollhausplatz,0.0001
-cat__route_short_name_infrequent_sklearn,0.0001
-cat__stop_name_Heilbronn Harmonie/Kunsthalle,0.0001
-cat__stop_name_Heilbronn Allee/Moltkestraße,0.0001
-cat__stop_name_Heilbronn H.-Hoover-Straße,0.0
-cat__stop_name_Sontheim Jörg-Ratgeb-Platz,0.0
-cat__stop_name_Heilbronn Südbahnhof Süd,0.0
-cat__stop_name_HN Hallenbad/Bildungscampus Ost,0.0
-cat__stop_name_Böckingen Florian-Geyer-Str.,0.0
-cat__stop_name_Sontheim Güldensteinstraße,0.0
-cat__stop_name_Sontheim Schwabenhof,0.0
-"cat__stop_name_Hauptbahnhof Busbahnhof, Heilbronn",0.0
-cat__stop_name_Sontheim Hessenhof,0.0
-cat__stop_name_Heilbronn Stuttgarter Brücke,0.0
-cat__stop_name_Heilbronn Cäcilienstraße Ost,0.0
-cat__stop_name_Böckingen W-Leuschner-Str Nord,0.0
-cat__stop_name_Böckingen Landwehrstraße West,0.0
+cat__route_short_name_11,0.0001
+cat__stop_name_Böckingen Grünewaldschule,0.0001
+cat__stop_name_Heilbronn Neckarturm,0.0001
+cat__stop_name_Heilbronn Sülmertor,0.0001
+cat__route_short_name_1,0.0001
+cat__stop_name_Heilbronn Hoover-Siedlung,0.0001
+cat__stop_name_Heilbronn Kinderklinik,0.0001
+cat__stop_name_Frankenbach (HN) Frankenbach Rathaus,0.0001
+cat__route_short_name_651,0.0001
+cat__route_short_name_695,0.0001
+cat__route_short_name_640,0.0001
+cat__stop_name_Böckingen Bruchsaler Straße,0.0001
+cat__stop_name_Heilbronn Hbf/Willy-Brandt-Pl. (Steig A),0.0001
+cat__route_short_name_64,0.0
+cat__stop_name_Böckingen Buchenhof,0.0
+cat__stop_name_Frankenbach Leintalstraße,0.0
 cat__stop_name_Heilbronn Allee Post Ost,0.0
-cat__stop_name_Sontheim Wertwiesen,0.0
-cat__stop_name_Sontheim Friedhof,0.0
-cat__stop_name_Heilbronn Kinderklinik,0.0
-cat__stop_name_Neckargartach Fleischbeil West,0.0
-cat__stop_name_Heilbronn Sülmertor,0.0
-cat__route_short_name_694,0.0
-cat__stop_name_Heilbronn Hbf/Willy-Brandt-Pl. (Steig A),0.0
-cat__stop_name_Böckingen Maasstraße,0.0
-cat__stop_name_Böckingen Schanz Süd,0.0
-cat__stop_name_Heilbronn Schmidbergstr West,0.0
-cat__stop_name_Heilbronn Schmidbergstraße Ost,0.0
-cat__stop_name_HN Harmonie/Hafenmarktpassage,0.0
-cat__stop_name_Heilbronn Südstraße West,0.0
-cat__stop_name_Heilbronn Schickhardtstraße,0.0
-cat__stop_name_Sontheim Hochschule HN Campus Sontheim,0.0
-cat__stop_name_Kirchhausen Wimpfener Weg,0.0
-cat__stop_name_Heilbronn Hohenstaufenstr West,0.0
-cat__stop_name_Heilbronn Berliner Platz West,0.0
-cat__stop_name_Böckingen Kappelfeldle,0.0
-cat__stop_name_Heilbronn Südbahnhof West,0.0
-cat__stop_name_Heilbronn Karlsruher Straße,0.0
-cat__stop_name_Böckingen Kastanienweg,0.0
-cat__stop_name_Heilbronn Silcherplatz West,0.0
-cat__stop_name_Heilbronn Beethovenstraße,0.0
-cat__stop_name_Böckingen Saarlandstraße,0.0
-cat__stop_name_Neckargartach Freibad Gesundbr,0.0
-cat__stop_name_Heilbronn Trappensee/Literaturhaus,0.0
-cat__stop_name_Sontheim Staufenbergstraße,0.0
-cat__stop_name_Neckargartach Falter,0.0
-cat__stop_name_Klingenberg Tränkgasse,0.0
-cat__stop_name_Heilbronn Mühlrainstraße,0.0
-cat__stop_name_Heilbronn Mönchseestraße,0.0
-cat__stop_name_Heilbronn Silcherplatz Ost,0.0
-cat__stop_name_Heilbronn Gartenstraße,0.0
-cat__stop_name_Heilbronn Rosenberg,0.0
-cat__stop_name_Heilbronn Fichtestraße,0.0
-cat__stop_name_Heilbronn Löwensteiner Straße,0.0
-cat__stop_name_Heilbronn Berliner Platz Ost,0.0
-cat__stop_name_Heilbronn Hohenstaufenstr Ost,0.0
-cat__stop_name_Klingenberg Schlossweg,0.0
-cat__stop_name_Heilbronn Firma Leitz,0.0
-cat__stop_name_Sontheim Bahnhof Nord,0.0
-cat__stop_name_Sontheim Hofgartenstraße,0.0
-cat__stop_name_Böckingen Mittlerer Weg,0.0
-cat__stop_name_Böckingen Hans-Sachs-Straße,0.0
-cat__stop_name_Heilbronn Wartbergsteige,0.0
-cat__stop_name_Sontheim Ackermann,0.0
-cat__stop_name_Böckingen Kreuzgrund,0.0
-cat__stop_name_Heilbronn Pestalozzistraße,0.0
-cat__stop_name_Neckargartach Falterstraße,0.0
-cat__stop_name_Kirchhausen Carl-Zeiss-Str.Süd,0.0
-cat__stop_name_Heilbronn Südstraße Ost,0.0
-cat__stop_name_Heilbronn IHK,0.0
-cat__stop_name_Kirchhausen Hausener Straße,0.0
-cat__stop_name_Heilbronn Wohlgelegen,0.0
-cat__stop_name_HN Europapl./Bildungscampus West,0.0
-cat__stop_name_Kirchhausen Schlossplatz,0.0
-cat__stop_name_Böckingen Landwehrstraße Ost,0.0
-cat__route_short_name_2,0.0
-cat__stop_name_Neckargartach Brünnlesstraße,0.0
-cat__stop_name_Kirchhausen Schultheiß-Hammer-Str.,0.0
-cat__stop_name_Heilbronn Käferflug,0.0
-cat__stop_name_Kirchhausen Schlossstraße,0.0
 cat__stop_name_Heilbronn Cäcilienstraße West,0.0
-cat__stop_name_Heilbronn Dittmarstraße,0.0
-cat__stop_name_Kirchhausen Konradsberg,0.0
-cat__stop_name_Heilbronn Badener Hof,0.0
-cat__stop_name_Heilbronn Neckarsulmer Straße,0.0
-num__has_traffic_event,0.0
-num__nearest_traffic_distance_km,0.0
-num__has_roadwork,0.0
-num__roadwork_count,0.0
-num__nearest_roadwork_distance_km,0.0
-num__traffic_event_count,0.0
-cat__route_type_3,0.0
-num__precipitation,0.0
-cat__stop_name_Heilbronn Briefverteilzentrum,0.0
-cat__stop_name_Heilbronn FIAT,0.0
-cat__stop_name_Heilbronn Fügerstraße,0.0
-cat__stop_name_Heilbronn Gemmingstal,0.0
+cat__stop_name_Heilbronn Wollhausplatz,0.0
+cat__stop_name_Neckargartach Fleischbeil West,0.0
+cat__stop_name_Heilbronn Beethovenstraße,0.0
+cat__stop_name_Heilbronn Stuttgarter Brücke,0.0
+cat__stop_name_Sontheim Schwabenhof,0.0
+cat__stop_name_Böckingen Schanz Nord,0.0
+cat__route_short_name_13,0.0
+cat__stop_name_Heilbronn H.-Hoover-Straße,0.0
+cat__route_short_name_31,0.0
+cat__stop_name_Heilbronn Hohenstaufenstr Ost,0.0
+cat__stop_name_Neckargartach Freibad Gesundbr,0.0
+cat__stop_name_Heilbronn Cäcilienstraße Ost,0.0
+cat__stop_name_Böckingen Schanz Süd,0.0
+cat__stop_name_Sontheim Max-von-Laue-Straße,0.0
+cat__stop_name_Heilbronn Schmidbergstraße Ost,0.0
+cat__stop_name_Sontheim Friedhof,0.0
+cat__stop_name_Heilbronn Schmidbergstr West,0.0
+cat__stop_name_Sontheim Jörg-Ratgeb-Platz,0.0
+cat__route_short_name_32,0.0
+cat__stop_name_Neckargartach Falter,0.0
+cat__stop_name_Böckingen Derfflingerstraße,0.0
+cat__stop_name_Heilbronn Hohenstaufenstr West,0.0
+cat__stop_name_Böckingen W-Leuschner-Str Nord,0.0
+cat__stop_name_Heilbronn Silcherplatz West,0.0
+cat__stop_name_Heilbronn Südstraße Ost,0.0
+cat__stop_name_Sontheim Hessenhof,0.0
+cat__stop_name_Heilbronn Berliner Platz Ost,0.0
+cat__stop_name_Heilbronn Karlsruher Straße,0.0
+cat__stop_name_Böckingen Landwehrstraße West,0.0
+cat__stop_name_Heilbronn Harmonie/Kunsthalle,0.0
+cat__stop_name_Heilbronn Mühlrainstraße,0.0
+cat__stop_name_Böckingen Maasstraße,0.0
+cat__stop_name_Kirchhausen Wimpfener Weg,0.0
+cat__stop_name_Heilbronn IHK,0.0
+cat__route_short_name_688,0.0
+cat__stop_name_Sontheim Hochschule HN Campus Sontheim,0.0
+cat__stop_name_Sontheim Güldensteinstraße,0.0
+cat__stop_name_Böckingen Kastanienweg,0.0
+cat__stop_name_Böckingen Florian-Geyer-Str.,0.0
+cat__stop_name_Böckingen Hans-Sachs-Straße,0.0
+cat__stop_name_Klingenberg Schlossweg,0.0
 cat__stop_name_Heilbronn Gildenstraße,0.0
-cat__stop_name_Heilbronn Friedhof,0.0
-cat__stop_name_Heilbronn Firma Böpple,0.0
-cat__stop_name_Heilbronn Hafenamt,0.0
-"cat__stop_name_HN, Böllinger Höfe AUDI Tor B",0.0
-cat__stop_name_Böckingen Kraichgauplatz,0.0
-cat__stop_name_Böckingen Westfriedhof,0.0
-cat__stop_name_Böckingen P.-Bruckmann-Brücke,0.0
-cat__stop_name_Heilbronn B27 (Karl-Wüst-Br),0.0
-cat__stop_name_Heilbronn Besigheimer Straße,0.0
-cat__stop_name_Heilbronn Kirschengarten,0.0
-cat__stop_name_Horkheim Stauwehrhalle,0.0
-cat__stop_name_Heilbronn Wannenäcker,0.0
-cat__stop_name_Heilbronn Waiblingerstraße,0.0
+cat__stop_name_Neckargartach Falterstraße,0.0
+cat__stop_name_Heilbronn Badener Hof,0.0
+cat__stop_name_Sontheim Wertwiesen,0.0
 cat__stop_name_Heilbronn Theresienwiese,0.0
-cat__stop_name_Heilbronn Winzerstraße,0.0
-cat__stop_name_Heilbronn Riedgrund,0.0
+cat__stop_name_Böckingen Mittlerer Weg,0.0
+cat__stop_name_HN Harmonie/Hafenmarktpassage,0.0
+cat__stop_name_Heilbronn Allee/Moltkestraße,0.0
+cat__stop_name_Heilbronn Berliner Platz West,0.0
+cat__stop_name_Böckingen Kreuzgrund,0.0
+cat__stop_name_Heilbronn B27 (Karl-Wüst-Br),0.0
+cat__stop_name_Sontheim Staufenbergstraße,0.0
+cat__stop_name_Heilbronn Schickhardtstraße,0.0
+cat__stop_name_Heilbronn Mönchseestraße,0.0
+cat__stop_name_HN Europapl./Bildungscampus West,0.0
+cat__stop_name_HN Hallenbad/Bildungscampus Ost,0.0
+cat__stop_name_Heilbronn Besigheimer Straße,0.0
+cat__stop_name_Böckingen P.-Bruckmann-Brücke,0.0
+cat__stop_name_Heilbronn Kirschengarten,0.0
+cat__stop_name_Böckingen Kappelfeldle,0.0
+cat__route_short_name_669,0.0
+cat__stop_name_Heilbronn Käferflug,0.0
+cat__route_short_name_FW 2,0.0
+cat__stop_name_Sontheim Ackermann,0.0
+cat__stop_name_Böckingen Saarlandstraße,0.0
+cat__stop_name_Heilbronn Pestalozzistraße,0.0
+cat__stop_name_Kirchhausen Schlossstraße,0.0
+cat__stop_name_Heilbronn Briefverteilzentrum,0.0
+cat__stop_name_Heilbronn Fichtestraße,0.0
+cat__stop_name_Heilbronn Rosenberg,0.0
+cat__stop_name_Heilbronn Gartenstraße,0.0
+cat__stop_name_Klingenberg Tränkgasse,0.0
+cat__stop_name_Heilbronn Silcherplatz Ost,0.0
+cat__stop_name_Kirchhausen Hausener Straße,0.0
+cat__stop_name_Heilbronn Löwensteiner Straße,0.0
+cat__stop_name_Sontheim Hofgartenstraße,0.0
 cat__stop_name_Heilbronn Theresienstraße,0.0
+cat__stop_name_Heilbronn Winzerstraße,0.0
+cat__stop_name_Heilbronn Wohlgelegen,0.0
+cat__stop_name_Böckingen Landwehrstraße Ost,0.0
+cat__route_short_name_infrequent_sklearn,0.0
+cat__stop_name_Böckingen Kraichgauplatz,0.0
+cat__stop_name_Heilbronn Wartbergsteige,0.0
+cat__stop_name_Heilbronn Waiblingerstraße,0.0
+cat__stop_name_Heilbronn Riedgrund,0.0
+cat__stop_name_Heilbronn Friedhof,0.0
+cat__stop_name_Heilbronn Gemmingstal,0.0
 cat__stop_name_Neckargartach Länderlesstraße,0.0
-cat__stop_name_Neckargartach Liebermannstraße,0.0
-cat__stop_name_Neckargartach Elbinger Straße,0.0
-cat__stop_name_Neckargartach Fleischbeil Nord,0.0
+"cat__stop_name_HN, Böllinger Höfe AUDI Tor B",0.0
+cat__stop_name_Kirchhausen Carl-Zeiss-Str.Süd,0.0
+cat__stop_name_Heilbronn Neckarsulmer Straße,0.0
+cat__route_type_3,0.0
+num__has_traffic_event,0.0
+num__traffic_event_count,0.0
+num__nearest_roadwork_distance_km,0.0
+num__has_roadwork,0.0
+cat__route_short_name_677,0.0
+num__nearest_traffic_distance_km,0.0
+num__roadwork_count,0.0
+cat__route_short_name_2,0.0
+cat__stop_name_Biberach Alter Friedhof,0.0
+cat__route_short_name_648HN,0.0
+cat__route_short_name_694,0.0
+cat__stop_name_Heilbronn Firma Böpple,0.0
+cat__stop_name_Heilbronn Firma Leitz,0.0
+cat__stop_name_Heilbronn B27 (Kreuzenstraße),0.0
+cat__stop_name_Heilbronn Dittmarstraße,0.0
+cat__stop_name_Heilbronn FIAT,0.0
+cat__stop_name_Böckingen Sperlingweg,0.0
+cat__stop_name_Böckingen Westfriedhof,0.0
+cat__stop_name_Heilbronn Fügerstraße,0.0
+cat__stop_name_Heilbronn Hafenamt,0.0
+"cat__stop_name_Hauptbahnhof Busbahnhof, Heilbronn",0.0
+cat__stop_name_Heilbronn Stadtgärtnerei,0.0
+cat__stop_name_Heilbronn Südbahnhof West,0.0
+cat__stop_name_Heilbronn Wannenäcker,0.0
+cat__stop_name_Kirchhausen Schultheiß-Hammer-Str.,0.0
+cat__stop_name_Kirchhausen Schlossplatz,0.0
+cat__stop_name_Kirchhausen Konradsberg,0.0
+cat__stop_name_Horkheim Stauwehrhalle,0.0
+cat__stop_name_Heilbronn Zukunftspark Süd,0.0
+cat__stop_name_Heilbronn Wannenäckerstraße,0.0
+cat__stop_name_Heilbronn Trappensee/Literaturhaus,0.0
+cat__stop_name_Sontheim Bahnhof Nord,0.0
 cat__stop_name_Klingenberg Schlüsseläcker,0.0
-cat__stop_name_Neckargartach Albrecht-Dürer-Schule,0.0
 cat__stop_name_Neckargartach Sachsenäcker,0.0
 cat__stop_name_Neckargartach Römerstraße,0.0
+cat__stop_name_Neckargartach Liebermannstraße,0.0
+cat__stop_name_Neckargartach Brünnlesstraße,0.0
+cat__stop_name_Neckargartach Albrecht-Dürer-Schule,0.0
+cat__stop_name_Neckargartach Elbinger Straße,0.0
+cat__stop_name_Neckargartach Fleischbeil Nord,0.0

@@ -1,3 +1,43 @@
+"""
+train.py (Version 6) - Verspaetungsprognose (Regression) fuer den Raum Heilbronn
+
+Laedt die Tabelle `traffic_data` aus PostgreSQL/Neon, baut Features, trainiert
+Baselines und Regressionsmodelle, bewertet sie auf einem zeitlich getrennten
+Testset (letzte Tage) und speichert das beste Modell.
+
+Neu in Version 6:
+  - Zusaetzliche Modelle im Vergleich: Extra Trees, Gradient Boosting mit nativen Kategorien
+    und (nur wenn das Paket `lightgbm` installiert ist) LightGBM. Die automatische Auswahl
+    nach dem Backtest-MAE bleibt gleich.
+
+Version 5:
+  - Historische Muster (HISTORIE_FEATURES): durchschnittliche Verspaetung je Kombination aus
+    Linie/Haltestelle/Tagtyp/Stunde, gelernt per Target Encoding (im Training mit
+    Kreuz-Ziehung, damit die eigene Verspaetung nicht in das eigene Feature rutscht)
+  - Feineres Tuning (RandomizedSearchCV, mehr Parameter) und ein Mix-Modell aus
+    Gradient Boosting (MAE) + Random Forest
+  - FAHRT_FEATURES ist standardmaessig aus (Vorab-Prognose ohne Fahrtverlauf)
+
+Version 4:
+  - Fahrtverlauf-Features (FAHRT_FEATURES = True): Verspaetung der vorherigen Haltestellen
+    DERSELBEN Fahrt. Das macht aus der Aufgabe eine Kurzfristprognose ("wie verspaetet ist
+    die Fahrt am naechsten Halt, wenn ich ihre aktuelle Verspaetung kenne?"). Mit
+    FAHRT_FEATURES = False entsteht wie bisher eine Prognose ohne Fahrtverlauf.
+
+Neu gegenueber Version 1:
+  - Lage-Features: mittlere Verspaetung der Linie bzw. des ganzen Netzes in der
+    Stunde VOR der Beobachtung (nur andere Fahrten, nur Vergangenheit)
+  - Uhrzeit als Sinus/Cosinus, Flag Hauptverkehrszeit
+  - Haltestelle als Kategorie, seltene Kategorien werden gebuendelt
+  - Gradient Boosting (mit MAE-Verlust und mit RMSE-Verlust), per Zeitreihen-
+    Kreuzvalidierung auf den Trainingstagen abgestimmt (Testtage bleiben tabu)
+  - Random Forest mit glatteren Einstellungen
+
+Start:
+    python train.py
+Voraussetzung: .env mit DATABASE_URL (wie bei prepare_data.py)
+"""
+
 import os
 import re
 import warnings
@@ -5,6 +45,7 @@ from datetime import datetime
 from pathlib import Path
 
 import joblib
+import sklearn
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
@@ -13,20 +54,22 @@ from sqlalchemy import create_engine
 from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
 from sklearn.dummy import DummyRegressor
-from sklearn.ensemble import HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import (ExtraTreesRegressor, HistGradientBoostingRegressor,
+                              RandomForestRegressor, VotingRegressor)
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LinearRegression, Ridge
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.model_selection import GridSearchCV, GroupShuffleSplit, TimeSeriesSplit
+from sklearn.model_selection import GroupShuffleSplit, KFold, RandomizedSearchCV, TimeSeriesSplit
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, OrdinalEncoder, StandardScaler, TargetEncoder
 
 warnings.filterwarnings("ignore", message="Skipping features without any observed values")
 
-
+# ----------------------------------------------------------------------
 # Einstellungen
+# ----------------------------------------------------------------------
 BASE_DIR = Path(__file__).resolve().parent
-RESULTS_DIR = BASE_DIR / "results"   
+RESULTS_DIR = BASE_DIR / "results"   # ggf. anpassen, falls die Ordner woanders liegen
 MODELS_DIR = BASE_DIR / "models"
 MODEL_PATH = MODELS_DIR / "verspaetung_modell.joblib"
 METRICS_PATH = RESULTS_DIR / "modell_metriken.csv"
@@ -40,15 +83,21 @@ LAG_BUCKET_MIN = 10           # Zeitraster fuer die Lage-Features
 LAG_BUCKETS = 6               # 6 x 10 min = die letzte Stunde vor der Beobachtung
 TUNING = True                 # False = schneller, ohne Parameter-Suche
 VORGAENGER_MAX_MIN = 90       # Vorgaenger-Fahrt zaehlt nur, wenn sie hoechstens so weit zurueckliegt
+FAHRT_FEATURES = False        # True = Verlauf der eigenen Fahrt als Feature (Kurzfristprognose)
+HISTORIE_FEATURES = True      # historische Muster je Linie/Haltestelle/Tagtyp/Stunde
+TUNING_ITERATIONEN = 20       # so viele Parameter-Kombinationen probiert die Suche
 BACKTEST = True               # Bewertung ueber mehrere einzelne Tage (dauert etwas laenger)
 BACKTEST_TAGE = 4             # so viele der letzten Tage werden einzeln nachgerechnet
+MIX_NAME = "Mix: Gradient Boosting (MAE) + Random Forest"
+NATIV_NAME = "Gradient Boosting nativ (MAE)"
 BACKTEST_MODELLE = [
     "Baseline: Median", "Baseline: Mittelwert", "Lineare Regression",
-    "Gradient Boosting (MAE)", "Gradient Boosting (RMSE)",
+    "Gradient Boosting (MAE)", "Gradient Boosting (RMSE)", MIX_NAME,
+    "Extra Trees", NATIV_NAME, "LightGBM (MAE)",   # nicht vorhandene werden uebersprungen
 ]
 WOCHENTAGE_KURZ = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]
 
-NUM_FEATURES = [
+BASIS_FEATURES = [
     "stunde",
     "stunde_sin",
     "stunde_cos",
@@ -73,11 +122,28 @@ NUM_FEATURES = [
     "vorgaenger_min",
     "vorgaenger_abstand_min",
 ]
+# Verspaetung der frueheren Haltestellen derselben Fahrt (nur Haltestellen, die vor der
+# aktuellen liegen und schon gemeldet waren)
+FAHRT_FEATURE_LISTE = [
+    "vorstop_min",            # Verspaetung am vorherigen Halt der Fahrt
+    "vorstop_abstand_min",    # Fahrplan-Abstand zu diesem Halt (Minuten)
+    "fahrt_start_min",        # Verspaetung am ersten gemeldeten Halt der Fahrt
+    "fahrt_mittel_min",       # Mittel der Verspaetung an allen frueheren Halten
+    "fahrt_n_vorher",         # Anzahl frueherer Halte
+]
+NUM_FEATURES = BASIS_FEATURES + (FAHRT_FEATURE_LISTE if FAHRT_FEATURES else [])
 CAT_FEATURES = ["route_short_name", "route_type", "stop_name"]
+# Kombinationen (Text), die per Target Encoding zur mittleren Verspaetung der Kombination werden
+HIST_FEATURES = (
+    ["k_linie_halt", "k_linie_tag_std", "k_halt_tag_std", "k_linie_halt_hvz"]
+    if HISTORIE_FEATURES else []
+)
+ALLE_FEATURES = NUM_FEATURES + CAT_FEATURES + HIST_FEATURES
 
 
-
+# ----------------------------------------------------------------------
 # 1. Daten laden
+# ----------------------------------------------------------------------
 def load_data() -> pd.DataFrame:
     load_dotenv(dotenv_path=BASE_DIR / ".env")
     engine = create_engine(os.environ["DATABASE_URL"])
@@ -87,8 +153,9 @@ def load_data() -> pd.DataFrame:
     return df
 
 
-
+# ----------------------------------------------------------------------
 # 2. Features bauen
+# ----------------------------------------------------------------------
 def _vorlauf(df: pd.DataFrame, keys: list):
     """Summe und Anzahl der Verspaetungen in den LAG_BUCKETS Zeitfenstern VOR dem
     eigenen Zeitfenster, gruppiert nach `keys` (leere Liste = ganzes Netz)."""
@@ -153,6 +220,57 @@ def add_vorgaenger_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def add_fahrt_features(df: pd.DataFrame) -> pd.DataFrame:
+    """Verlauf der EIGENEN Fahrt: Verspaetung an den Haltestellen, die in derselben Fahrt
+    (service_date + trip_id) vor dem aktuellen Halt kommen.
+
+    Ohne Leck: Fuer einen Halt zaehlen nur Haltestellen mit kleinerer stop_sequence, deren
+    Sollzeit UND Realtime-Zeit nicht nach dem aktuellen Halt liegen (also schon gemeldet
+    waren). Die Verspaetung des aktuellen Halts selbst fliesst nie ein."""
+    df = df.copy()
+    keys = ["service_date", "trip_id"]
+    halt = (
+        df.groupby(keys + ["stop_sequence"])
+        .agg(d=("verspaetung_min", "mean"), t=("ts_soll", "min"), r=("ts", "min"))
+        .reset_index()
+        .sort_values(keys + ["stop_sequence"])
+        .reset_index(drop=True)
+    )
+    g = halt.groupby(keys, sort=False)
+    abstand = (halt["t"] - g["t"].shift(1)).dt.total_seconds() / 60.0
+    ok = (abstand >= 0) & (halt["r"] >= g["r"].shift(1))
+    n_vorher = g.cumcount()
+    summe_vorher = g["d"].cumsum() - halt["d"]
+    ok_viele = ok & (n_vorher > 0)
+
+    halt["vorstop_min"] = g["d"].shift(1).where(ok)
+    halt["vorstop_abstand_min"] = abstand.where(ok)
+    halt["fahrt_start_min"] = g["d"].transform("first").where(ok_viele)
+    halt["fahrt_mittel_min"] = (summe_vorher / n_vorher.where(n_vorher > 0)).where(ok_viele)
+    halt["fahrt_n_vorher"] = n_vorher.where(ok_viele)
+
+    spalten = keys + ["stop_sequence"] + FAHRT_FEATURE_LISTE
+    out = df.merge(halt[spalten], on=keys + ["stop_sequence"], how="left")
+    assert len(out) == len(df), "add_fahrt_features hat Rows veraendert"
+    return out
+
+
+def hist_kombis(linie, halt, wochentag, stunde, hvz) -> dict:
+    """Schluessel fuer die historischen Muster. Wird in build_features (Series) und in
+    predict.py (Einzelwerte als Series der Laenge 1) identisch benutzt."""
+    tag = pd.Series(np.where(wochentag < 5, "wt", np.where(wochentag == 5, "sa", "so")),
+                    index=linie.index)
+    std = stunde.astype(int).astype(str)
+    linie, halt = linie.astype(str), halt.astype(str)
+    hvz = hvz.astype(int).astype(str)
+    return {
+        "k_linie_halt": linie + "|" + halt,
+        "k_linie_tag_std": linie + "|" + tag + "|" + std,
+        "k_halt_tag_std": halt + "|" + tag + "|" + std,
+        "k_linie_halt_hvz": linie + "|" + halt + "|" + hvz,
+    }
+
+
 def build_features(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
@@ -190,6 +308,9 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     # Kategorische Spalten als Text
     for col in CAT_FEATURES:
         df[col] = df[col].astype(str)
+    for name, werte in hist_kombis(df["route_short_name"], df["stop_name"], df["wochentag"],
+                                   df["stunde"], df["ist_hauptverkehrszeit"]).items():
+        df[name] = werte
 
     # Zeilen ohne Ziel/Zeitpunkt oder mit Extremwerten entfernen
     df = df.dropna(subset=["verspaetung_min", "ts", "ts_soll"])
@@ -198,6 +319,7 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     # Lage-Features (brauchen die bereinigten Rows)
     df = add_lag_features(df)
     df = add_vorgaenger_features(df)
+    df = add_fahrt_features(df)
 
     # Numerische Spalten sicher in Zahlen umwandeln
     for col in NUM_FEATURES:
@@ -208,8 +330,9 @@ def build_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-
+# ----------------------------------------------------------------------
 # 3. Train/Test-Split (ohne Leakage)
+# ----------------------------------------------------------------------
 def split_data(df: pd.DataFrame):
     """Zeitlich nach service_date, wenn genug Tage da sind,
     sonst fahrtweise (alle Rows einer trip_id bleiben zusammen)."""
@@ -232,8 +355,20 @@ def split_data(df: pd.DataFrame):
     return train, test
 
 
-
+# ----------------------------------------------------------------------
 # 4. Modelle
+# ----------------------------------------------------------------------
+def _target_encoder() -> TargetEncoder:
+    """Target Encoding mit 5-facher Kreuz-Ziehung. Ab scikit-learn 1.9 wird die Mischung
+    ueber einen KFold-Generator festgelegt (random_state am Encoder ist veraltet)."""
+    version = tuple(int(x) for x in sklearn.__version__.split(".")[:2])
+    if version >= (1, 9):
+        cv = KFold(n_splits=5, shuffle=True, random_state=RANDOM_STATE)
+        return TargetEncoder(target_type="continuous", smooth="auto", cv=cv)
+    return TargetEncoder(target_type="continuous", smooth="auto", cv=5,
+                         random_state=RANDOM_STATE)
+
+
 def make_preprocessor() -> ColumnTransformer:
     numerisch = Pipeline([
         ("imputer", SimpleImputer(strategy="median")),
@@ -244,11 +379,53 @@ def make_preprocessor() -> ColumnTransformer:
         # Kategorien mit weniger als 100 Rows werden zu "selten" gebuendelt
         ("onehot", OneHotEncoder(handle_unknown="infrequent_if_exist", min_frequency=100)),
     ])
+    teile = [("num", numerisch, NUM_FEATURES), ("cat", kategorisch, CAT_FEATURES)]
+    if HIST_FEATURES:
+        # Mittlere Verspaetung je Kombination. fit_transform nutzt intern eine Kreuz-Ziehung
+        # (cv=5): die eigene Row zaehlt nicht in ihr eigenes Feature. Unbekannte Kombinationen
+        # bekommen den Gesamtmittelwert, seltene werden zum Mittelwert hin gezogen (smooth).
+        teile.append(("hist", _target_encoder(), HIST_FEATURES))
     # sparse_threshold=0: immer dichte Matrix (Gradient Boosting braucht das)
-    return ColumnTransformer(
-        [("num", numerisch, NUM_FEATURES), ("cat", kategorisch, CAT_FEATURES)],
-        sparse_threshold=0,
+    return ColumnTransformer(teile, sparse_threshold=0)
+
+
+def make_preprocessor_nativ() -> ColumnTransformer:
+    """Fuer Gradient Boosting mit nativen Kategorien: Kategorien als Zahlen-Codes (keine
+    One-Hot-Spalten), seltene werden gebuendelt, Unbekanntes wird zu NaN."""
+    kategorisch = OrdinalEncoder(
+        handle_unknown="use_encoded_value", unknown_value=np.nan,
+        encoded_missing_value=np.nan, min_frequency=100, max_categories=200,
     )
+    teile = [("num", "passthrough", NUM_FEATURES), ("cat", kategorisch, CAT_FEATURES)]
+    if HIST_FEATURES:
+        teile.append(("hist", _target_encoder(), HIST_FEATURES))
+    return ColumnTransformer(teile, sparse_threshold=0)
+
+
+def _hgb_nativ() -> Pipeline:
+    erste_kat = len(NUM_FEATURES)
+    kat_idx = list(range(erste_kat, erste_kat + len(CAT_FEATURES)))
+    return Pipeline([
+        ("pre", make_preprocessor_nativ()),
+        ("model", HistGradientBoostingRegressor(
+            loss="absolute_error", max_iter=500, learning_rate=0.05, max_leaf_nodes=31,
+            min_samples_leaf=100, l2_regularization=10.0, categorical_features=kat_idx,
+            random_state=RANDOM_STATE,
+        )),
+    ])
+
+
+def _lightgbm():
+    """LightGBM nur, wenn das Paket installiert ist (pip install lightgbm)."""
+    try:
+        from lightgbm import LGBMRegressor
+    except ImportError:
+        return None
+    return _pipe(LGBMRegressor(
+        objective="l1", n_estimators=500, learning_rate=0.05, num_leaves=31,
+        min_child_samples=100, reg_lambda=10.0, random_state=RANDOM_STATE,
+        n_jobs=-1, verbose=-1,
+    ))
 
 
 def _pipe(regressor) -> Pipeline:
@@ -257,12 +434,12 @@ def _pipe(regressor) -> Pipeline:
 
 def _hgb(loss: str) -> Pipeline:
     return _pipe(HistGradientBoostingRegressor(
-        loss=loss, max_iter=300, l2_regularization=1.0, random_state=RANDOM_STATE,
+        loss=loss, max_iter=500, l2_regularization=1.0, random_state=RANDOM_STATE,
     ))
 
 
 def make_models() -> dict:
-    return {
+    modelle = {
         "Baseline: Mittelwert": _pipe(DummyRegressor(strategy="mean")),
         "Baseline: Median": _pipe(DummyRegressor(strategy="median")),
         "Lineare Regression": _pipe(LinearRegression()),
@@ -273,7 +450,16 @@ def make_models() -> dict:
         )),
         "Gradient Boosting (MAE)": _hgb("absolute_error"),
         "Gradient Boosting (RMSE)": _hgb("squared_error"),
+        "Extra Trees": _pipe(ExtraTreesRegressor(
+            n_estimators=200, min_samples_leaf=20, max_features=0.5,
+            n_jobs=-1, random_state=RANDOM_STATE,
+        )),
+        NATIV_NAME: _hgb_nativ(),
     }
+    lgbm = _lightgbm()
+    if lgbm is not None:
+        modelle["LightGBM (MAE)"] = lgbm
+    return modelle
 
 
 # welche Modelle per Zeitreihen-Kreuzvalidierung abgestimmt werden: Name -> Scoring
@@ -282,16 +468,18 @@ TUNE = {
     "Gradient Boosting (RMSE)": "r2",
 }
 TUNE_GRID = {
-    "model__learning_rate": [0.05, 0.1],
-    "model__max_leaf_nodes": [15, 31],
-    "model__min_samples_leaf": [50, 200],
+    "model__learning_rate": [0.03, 0.05, 0.1],
+    "model__max_leaf_nodes": [15, 31, 63],
+    "model__min_samples_leaf": [30, 50, 100, 200],
+    "model__l2_regularization": [0.0, 1.0, 10.0],
 }
 
 
 def tune(pipeline: Pipeline, X: pd.DataFrame, y: pd.Series, scoring: str) -> Pipeline:
     """Parameter-Suche NUR auf den Trainingstagen (zeitlich geordnete Folds)."""
-    suche = GridSearchCV(pipeline, TUNE_GRID, scoring=scoring,
-                         cv=TimeSeriesSplit(n_splits=3), n_jobs=1, refit=True)
+    suche = RandomizedSearchCV(pipeline, TUNE_GRID, n_iter=TUNING_ITERATIONEN, scoring=scoring,
+                               cv=TimeSeriesSplit(n_splits=3), n_jobs=1, refit=True,
+                               random_state=RANDOM_STATE)
     suche.fit(X, y)
     print(f"   beste Parameter: {suche.best_params_}")
     return suche.best_estimator_
@@ -309,7 +497,7 @@ def backtest(df: pd.DataFrame, vorlagen: dict, n_tage: int) -> pd.DataFrame:
     """Fuer jeden der letzten n_tage Tage: auf allen frueheren Tagen trainieren und
     genau diesen Tag testen. Robuster als nur die letzten 2 Testtage, weil ein
     einzelnes (Wochenend-)Ergebnis nicht alles entscheidet."""
-    feat = NUM_FEATURES + CAT_FEATURES
+    feat = ALLE_FEATURES
     tage = sorted(df["service_date"].dropna().unique())
     zeilen = []
     print(f"\nBacktest ueber die letzten {n_tage} Tage ...")
@@ -338,8 +526,9 @@ def backtest(df: pd.DataFrame, vorlagen: dict, n_tage: int) -> pd.DataFrame:
     return bt
 
 
-
+# ----------------------------------------------------------------------
 # 5. Hauptprogramm
+# ----------------------------------------------------------------------
 def main():
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
@@ -354,8 +543,8 @@ def main():
     test_tage = sorted(test["service_date"].dropna().unique())
     split_typ = "zeitlich" if not (set(train_tage) & set(test_tage)) else "fahrtweise"
     train = train.sort_values("ts")  # Reihenfolge der Zeit fuer die Kreuzvalidierung
-    X_train, y_train = train[NUM_FEATURES + CAT_FEATURES], train["verspaetung_min"]
-    X_test, y_test = test[NUM_FEATURES + CAT_FEATURES], test["verspaetung_min"]
+    X_train, y_train = train[ALLE_FEATURES], train["verspaetung_min"]
+    X_test, y_test = test[ALLE_FEATURES], test["verspaetung_min"]
 
     print(f"\nVerspaetung im Train: Mittel {y_train.mean():.2f} min, "
           f"Median {y_train.median():.2f} min, Std {y_train.std():.2f} min")
@@ -371,6 +560,17 @@ def main():
         pred = modell.predict(X_test)
         ergebnisse.append({"Modell": name, **bewerte(y_test, pred)})
         fitted[name] = (modell, pred)
+
+    # Mix: Mittel aus dem getunten Gradient Boosting (MAE) und dem Random Forest
+    print(f"Trainiere: {MIX_NAME} ...")
+    mix = VotingRegressor([
+        ("gb", clone(fitted["Gradient Boosting (MAE)"][0])),
+        ("rf", clone(fitted["Random Forest"][0])),
+    ])
+    mix.fit(X_train, y_train)
+    pred_mix = mix.predict(X_test)
+    ergebnisse.append({"Modell": MIX_NAME, **bewerte(y_test, pred_mix)})
+    fitted[MIX_NAME] = (mix, pred_mix)
 
     # Einfache lineare Regression: nur EIN Feature (staerkste Korrelation im Training)
     korr = train[NUM_FEATURES].corrwith(y_train).abs().dropna()
@@ -447,7 +647,7 @@ def main():
             "train_tage": train_tage,
             "test_tage": test_tage,
             "num_features": NUM_FEATURES,
-            "cat_features": CAT_FEATURES,
+            "cat_features": CAT_FEATURES + HIST_FEATURES,
             "kein_event_distanz_km": KEIN_EVENT_DISTANZ_KM,
             "metriken": tabelle.loc[bestes].to_dict(),
         },
