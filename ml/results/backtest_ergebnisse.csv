@@ -1,37 +1,29 @@
 Tag,Rows,Modell,MAE (min),RMSE (min),R2
 20261111 (Mi),4919,Baseline: Median,2.5221,5.6924,-0.033
-20261111 (Mi),4919,Baseline: Mittelwert,2.7891,5.6013,-0.0002
-20261111 (Mi),4919,Lineare Regression,2.5424,5.0716,0.18
-20261111 (Mi),4919,Gradient Boosting (MAE),2.0404,5.121,0.164
-20261111 (Mi),4919,Gradient Boosting (RMSE),2.2025,4.7499,0.2807
-20261111 (Mi),4919,Mix: Gradient Boosting (MAE) + Random Forest,1.999,4.8253,0.2577
-20261111 (Mi),4919,Extra Trees,2.0661,4.6988,0.2961
-20261111 (Mi),4919,Gradient Boosting nativ (MAE),1.9963,5.0572,0.1847
-20261111 (Mi),4919,LightGBM (MAE),2.0497,5.068,0.1812
+20261111 (Mi),4919,Baseline: Mittelwert,2.7687,5.6008,-0.0
+20261111 (Mi),4919,Lineare Regression,2.4608,5.0655,0.182
+20261111 (Mi),4919,Gradient Boosting nativ (MAE),1.961,5.0338,0.1922
+20261111 (Mi),4919,LightGBM (MAE),1.9667,5.0182,0.1972
+20261111 (Mi),4919,Mix: Gradient Boosting (MAE) + Random Forest,1.9874,4.8577,0.2477
+20261111 (Mi),4919,Extra Trees,2.0191,4.7247,0.2884
 20261112 (Do),8538,Baseline: Median,2.7603,5.888,-0.0733
-20261112 (Do),8538,Baseline: Mittelwert,2.8602,5.7003,-0.006
-20261112 (Do),8538,Lineare Regression,2.6072,5.0906,0.1977
-20261112 (Do),8538,Gradient Boosting (MAE),2.2205,5.1199,0.1885
-20261112 (Do),8538,Gradient Boosting (RMSE),2.3368,4.5191,0.3678
-20261112 (Do),8538,Mix: Gradient Boosting (MAE) + Random Forest,2.2009,4.7067,0.3142
-20261112 (Do),8538,Extra Trees,2.2577,4.5648,0.3549
-20261112 (Do),8538,Gradient Boosting nativ (MAE),2.1753,5.0433,0.2126
-20261112 (Do),8538,LightGBM (MAE),2.2072,5.0662,0.2054
+20261112 (Do),8538,Baseline: Mittelwert,2.8463,5.7049,-0.0076
+20261112 (Do),8538,Lineare Regression,2.5835,5.129,0.1856
+20261112 (Do),8538,Gradient Boosting nativ (MAE),2.1282,5.0141,0.2217
+20261112 (Do),8538,LightGBM (MAE),2.1799,5.0491,0.2107
+20261112 (Do),8538,Mix: Gradient Boosting (MAE) + Random Forest,2.1741,4.7418,0.3039
+20261112 (Do),8538,Extra Trees,2.1893,4.5452,0.3604
 20261113 (Fr),4012,Baseline: Median,2.4082,4.8072,-0.0262
-20261113 (Fr),4012,Baseline: Mittelwert,2.6401,4.7584,-0.0054
-20261113 (Fr),4012,Lineare Regression,2.3773,4.4373,0.1257
-20261113 (Fr),4012,Gradient Boosting (MAE),2.0528,4.2506,0.1977
-20261113 (Fr),4012,Gradient Boosting (RMSE),2.1489,4.0706,0.2642
-20261113 (Fr),4012,Mix: Gradient Boosting (MAE) + Random Forest,2.0812,4.1387,0.2394
-20261113 (Fr),4012,Extra Trees,2.121,4.1585,0.2321
-20261113 (Fr),4012,Gradient Boosting nativ (MAE),2.0032,4.0817,0.2602
-20261113 (Fr),4012,LightGBM (MAE),2.0338,4.1621,0.2308
-20261114 (Sa),1490,Baseline: Median,2.0457,5.0138,-0.0004
-20261114 (Sa),1490,Baseline: Mittelwert,2.5564,5.1562,-0.0581
-20261114 (Sa),1490,Lineare Regression,1.8004,3.4545,0.5251
-20261114 (Sa),1490,Gradient Boosting (MAE),1.6455,3.8321,0.4156
-20261114 (Sa),1490,Gradient Boosting (RMSE),1.8855,3.2745,0.5733
-20261114 (Sa),1490,Mix: Gradient Boosting (MAE) + Random Forest,1.5969,3.5202,0.5068
-20261114 (Sa),1490,Extra Trees,1.6122,3.4756,0.5193
-20261114 (Sa),1490,Gradient Boosting nativ (MAE),1.6157,3.6868,0.4591
-20261114 (Sa),1490,LightGBM (MAE),1.6627,3.8681,0.4046
+20261113 (Fr),4012,Baseline: Mittelwert,2.6166,4.7543,-0.0037
+20261113 (Fr),4012,Lineare Regression,2.3514,4.4437,0.1231
+20261113 (Fr),4012,Gradient Boosting nativ (MAE),1.9831,4.1578,0.2324
+20261113 (Fr),4012,LightGBM (MAE),2.0146,4.1606,0.2313
+20261113 (Fr),4012,Mix: Gradient Boosting (MAE) + Random Forest,2.0457,4.1521,0.2345
+20261113 (Fr),4012,Extra Trees,2.061,4.135,0.2407
+20261114 (Sa),4067,Baseline: Median,1.9781,4.1305,-0.0047
+20261114 (Sa),4067,Baseline: Mittelwert,2.2913,4.1905,-0.0341
+20261114 (Sa),4067,Lineare Regression,1.8159,3.3121,0.354
+20261114 (Sa),4067,Gradient Boosting nativ (MAE),1.6243,3.3751,0.3292
+20261114 (Sa),4067,LightGBM (MAE),1.6425,3.3434,0.3417
+20261114 (Sa),4067,Mix: Gradient Boosting (MAE) + Random Forest,1.6653,3.2698,0.3704
+20261114 (Sa),4067,Extra Trees,1.6624,3.2008,0.3967

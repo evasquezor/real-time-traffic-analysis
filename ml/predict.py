@@ -1,25 +1,3 @@
-"""
-predict.py (Version 5) - Verspaetung fuer eine konkrete Fahrt vorhersagen
-
-Laedt das trainierte Modell (verspaetung_modell.joblib) und gibt die erwartete
-Verspaetung in Minuten zurueck.
-
-Test im Terminal:
-    python predict.py
-
-Im Dashboard / in anderen Skripten:
-    from predict import prognose
-    minuten = prognose(linie="61", stunde=8, wochentag=0, stop_sequence=5,
-                       lag_linie_min=3.5)
-
-Nicht angegebene Werte (z. B. Wetter oder Lage) fuellt die Pipeline selbst mit
-dem Median aus dem Training auf. Je mehr Werte angegeben sind, desto genauer.
-
-Die Lage-Werte (lag_*) sind die mittlere Verspaetung ANDERER Fahrten in der
-letzten Stunde (gleiche Linie bzw. ganzes Netz) und die Anzahl der Rows dahinter.
-Berechnen laesst sich das aus der Datenbank, siehe add_lag_features() in train.py.
-"""
-
 import warnings
 from functools import lru_cache
 from pathlib import Path
@@ -73,6 +51,15 @@ def prognose(
     fahrt_start_min=None,
     fahrt_mittel_min=None,
     fahrt_n_vorher=None,
+    lag_halt_min=None,
+    lag_halt_n=None,
+    lag_linie_kurz_min=None,
+    lag_linie_kurz_n=None,
+    lag_netz_kurz_min=None,
+    naechster_abstand_min=None,
+    vorgaenger3_min=None,
+    vorgaenger3_n=None,
+    linie_laenge=None,
     modell_pfad: str = str(MODEL_PATH),
 ) -> float:
     """Erwartete Verspaetung in Minuten.
@@ -90,6 +77,12 @@ def prognose(
         Fahrplan-Abstand zu diesem Halt; fahrt_start_min / fahrt_mittel_min / fahrt_n_vorher:
         Verspaetung am ersten gemeldeten Halt, Mittel und Anzahl der frueheren Halte der Fahrt
         (nur relevant, wenn das Modell mit FAHRT_FEATURES = True trainiert wurde)
+    lag_halt_min / lag_halt_n: mittlere Verspaetung aller Linien an dieser Haltestelle in den
+        letzten ca. 30 Minuten und Anzahl; lag_linie_kurz_min / lag_netz_kurz_min: Lage der
+        Linie bzw. des Netzes in den letzten ca. 20 Minuten (Trend wird daraus berechnet)
+    naechster_abstand_min: Fahrplan-Abstand zur naechsten Fahrt der Linie (Takt)
+    vorgaenger3_min / vorgaenger3_n: Mittel der letzten 3 Vorgaenger-Fahrten und Anzahl
+    linie_laenge: typische Anzahl Halte der Linie (fuer die relative Position)
     """
     paket = lade_modell(modell_pfad)
     kein_event = paket["kein_event_distanz_km"]
@@ -128,6 +121,21 @@ def prognose(
         "lag_netz_n": _zahl(lag_netz_n),
         "vorgaenger_min": _zahl(vorgaenger_min),
         "vorgaenger_abstand_min": _zahl(vorgaenger_abstand_min),
+        "lag_halt_min": _zahl(lag_halt_min),
+        "lag_halt_n": _zahl(lag_halt_n),
+        "lag_linie_kurz_min": _zahl(lag_linie_kurz_min),
+        "lag_linie_kurz_n": _zahl(lag_linie_kurz_n),
+        "lag_netz_kurz_min": _zahl(lag_netz_kurz_min),
+        "trend_linie_min": _zahl(lag_linie_kurz_min) - _zahl(lag_linie_min),
+        "trend_netz_min": _zahl(lag_netz_kurz_min) - _zahl(lag_netz_min),
+        "naechster_abstand_min": _zahl(naechster_abstand_min),
+        "vorgaenger3_min": _zahl(vorgaenger3_min),
+        "vorgaenger3_n": _zahl(vorgaenger3_n),
+        "linie_laenge": _zahl(linie_laenge),
+        "pos_rel": (_zahl(stop_sequence) / linie_laenge) if (stop_sequence is not None and linie_laenge) else np.nan,
+        "ist_erster_halt": np.nan if stop_sequence is None else float(stop_sequence <= 1),
+        "ist_letzter_halt": (np.nan if stop_sequence is None or not linie_laenge
+                             else float(stop_sequence >= linie_laenge)),
         "vorstop_min": _zahl(vorstop_min),
         "vorstop_abstand_min": _zahl(vorstop_abstand_min),
         "fahrt_start_min": _zahl(fahrt_start_min),

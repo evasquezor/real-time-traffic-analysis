@@ -1,13 +1,12 @@
 Modell,MAE (min),RMSE (min),R2
-Baseline: Mittelwert,2.76,5.389,-0.0
-Baseline: Median,2.583,5.51,-0.046
-Lineare Regression,2.456,4.761,0.219
-Ridge Regression,2.456,4.761,0.219
-Random Forest,2.155,4.249,0.378
-Gradient Boosting (MAE),2.114,4.751,0.223
-Gradient Boosting (RMSE),2.214,4.276,0.37
-Extra Trees,2.153,4.341,0.351
-Gradient Boosting nativ (MAE),2.076,4.684,0.244
-LightGBM (MAE),2.107,4.715,0.234
-Mix: Gradient Boosting (MAE) + Random Forest,2.103,4.437,0.322
-Einfache Regression (lag_linie_min),2.754,5.358,0.011
+Baseline: Mittelwert,2.65,5.145,-0.0
+Baseline: Median,2.483,5.251,-0.042
+Lineare Regression,2.341,4.582,0.207
+Random Forest,2.059,4.128,0.356
+Gradient Boosting (MAE),2.035,4.55,0.218
+Gradient Boosting (RMSE),2.113,4.067,0.375
+Extra Trees,2.033,4.154,0.348
+Gradient Boosting nativ (MAE),1.976,4.457,0.25
+LightGBM (MAE),2.006,4.482,0.241
+Mix: Gradient Boosting (MAE) + Random Forest,2.019,4.288,0.305
+Einfache Regression (vorgaenger3_min),2.583,5.099,0.018
